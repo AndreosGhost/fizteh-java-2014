@@ -18,4 +18,9 @@ public interface Command<State extends ShellState<State>> {
      * Complete formula for command invocation excluding command name.
      */
     String getInvocation();
+
+    default String buildHelpLine(String commandName) {
+        return String.format(
+                "\t%s%s\t%s", commandName, getInvocation() == null ? "" : (' ' + getInvocation()), getInfo());
+    }
 }

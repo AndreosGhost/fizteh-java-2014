@@ -7,6 +7,7 @@ import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.shell.Shell;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.shell.ShellState;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.shell.SimpleCommandContainer;
 
+import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -66,12 +67,9 @@ public class AlternativeShellState extends SimpleCommandContainer<AlternativeShe
         this.makeExceptionOnInit = makeExceptionOnInit;
     }
 
-    public boolean isMakeRuntimeExceptionOnCleanup() {
-        return makeRuntimeExceptionOnCleanup;
-    }
-
-    public void setMakeRuntimeExceptionOnCleanup(boolean makeRuntimeExceptionOnCleanup) {
-        this.makeRuntimeExceptionOnCleanup = makeRuntimeExceptionOnCleanup;
+    @Override
+    public PrintStream getOutputStream() {
+        return System.out;
     }
 
     @Override
@@ -103,6 +101,14 @@ public class AlternativeShellState extends SimpleCommandContainer<AlternativeShe
     @Override
     public void prepareToExit(int exitCode) throws ExitRequest {
         throw new ExitRequest(exitCode);
+    }
+
+    public boolean isMakeRuntimeExceptionOnCleanup() {
+        return makeRuntimeExceptionOnCleanup;
+    }
+
+    public void setMakeRuntimeExceptionOnCleanup(boolean makeRuntimeExceptionOnCleanup) {
+        this.makeRuntimeExceptionOnCleanup = makeRuntimeExceptionOnCleanup;
     }
 
     @Override

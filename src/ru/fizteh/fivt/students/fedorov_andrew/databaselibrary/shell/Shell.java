@@ -9,6 +9,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -36,20 +38,52 @@ public class Shell<ShellStateImpl extends ShellState<ShellStateImpl>> {
      * Object encapsulating commands and data they work with.
      */
     private final ShellStateImpl shellState;
+    private final PrintStream outputStream;
     private boolean valid = true;
     /**
      * Available commands for invocation.
      */
     private Map<String, Command<ShellStateImpl>> commandMap;
-
     /**
      * If the user is entering commands or it is package mode.
      */
     private boolean interactive;
 
-    public Shell(ShellStateImpl shellState) throws TerminalException {
+    public Shell(ShellStateImpl shellState, OutputStream outputStream) throws TerminalException {
         this.shellState = shellState;
+        this.outputStream = outputStream instanceof PrintStream
+                            ? (PrintStream) outputStream
+                            : new PrintStream(outputStream);
         init();
+    }
+
+    public Shell(ShellStateImpl shellState) throws TerminalException {
+        this(shellState, System.out);
+    }
+
+    /**
+     * Handles an occurred exception.
+     * @param cause
+     *         occurred exception. If null, an {@link Exception} is constructed via {@link
+     *         Exception#Exception(String)}.
+     * @param message
+     *         message that can be reported to user and is written to log.
+     * @param reportToUser
+     *         if true, message is printed to errorStream.
+     */
+    public static void handleError(String message,
+                                   Throwable cause,
+                                   boolean reportToUser,
+                                   PrintStream errorStream) throws TerminalException {
+        if (reportToUser) {
+            errorStream.println(message == null ? cause.getMessage() : message);
+        }
+        Log.log(Commands.class, cause, message);
+        if (cause == null) {
+            throw new TerminalException(message);
+        } else {
+            throw new TerminalException(message, cause);
+        }
     }
 
     /**
@@ -101,6 +135,10 @@ public class Shell<ShellStateImpl extends ShellState<ShellStateImpl>> {
         return commands;
     }
 
+    public PrintStream getOutputStream() {
+        return outputStream;
+    }
+
     /**
      * Executes command in this shell
      * @param args
@@ -116,7 +154,7 @@ public class Shell<ShellStateImpl extends ShellState<ShellStateImpl>> {
 
         Command<ShellStateImpl> command = commandMap.get(args[0]);
         if (command == null) {
-            Utility.handleError(args[0] + ": command is missing", null, true);
+            handleError(args[0] + ": command is missing", null, true, getOutputStream());
         } else {
             try {
                 command.execute(shellState, args);
@@ -124,7 +162,7 @@ public class Shell<ShellStateImpl extends ShellState<ShellStateImpl>> {
                 // If it is TerminalException, error report is already written.
                 throw exc;
             } catch (Exception exc) {
-                Utility.handleError(args[0] + ": Method execution error", exc, true);
+                handleError(args[0] + ": Method execution error", exc, true, getOutputStream());
             }
         }
     }
@@ -138,7 +176,7 @@ public class Shell<ShellStateImpl extends ShellState<ShellStateImpl>> {
         try {
             shellState.init(this);
         } catch (Exception exc) {
-            Utility.handleError(exc.getMessage(), exc, true);
+            handleError(exc.getMessage(), exc, true, getOutputStream());
         }
 
         commandMap = shellState.getCommands();
@@ -172,7 +210,7 @@ public class Shell<ShellStateImpl extends ShellState<ShellStateImpl>> {
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(stream), READ_BUFFER_SIZE)) {
             while (true) {
-                System.out.print(shellState.getGreetingString());
+                outputStream.print(shellState.getGreetingString());
                 String str = reader.readLine();
 
                 // End of stream.
@@ -191,7 +229,7 @@ public class Shell<ShellStateImpl extends ShellState<ShellStateImpl>> {
             }
         } catch (IOException | ParseException exc) {
             exitRequested = true;
-            Utility.handleError("Error in input stream: " + exc.getMessage(), exc, true);
+            handleError("Error in input stream: " + exc.getMessage(), exc, true, getOutputStream());
             // No need to cleanup - work has not been started.
         } catch (ExitRequest request) {
             exitRequested = true;
@@ -236,7 +274,8 @@ public class Shell<ShellStateImpl extends ShellState<ShellStateImpl>> {
                 // Exception already handled.
                 shellState.prepareToExit(1);
             } catch (ParseException exc) {
-                Utility.handleError("Cannot parse command arguments: " + exc.getMessage(), exc, true);
+                handleError(
+                        "Cannot parse command arguments: " + exc.getMessage(), exc, true, getOutputStream());
             }
             persistSafelyAndPrepareToExit();
         } catch (ExitRequest request) {

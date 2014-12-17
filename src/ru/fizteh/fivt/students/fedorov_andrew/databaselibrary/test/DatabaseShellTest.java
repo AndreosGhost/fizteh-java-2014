@@ -5,9 +5,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.DatabaseIOException;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.TerminalException;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.shell.Shell;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.shell.SingleDatabaseShellState;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.shell.SingleFactoryDatabaseShellState;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.test.support.MutatedSDSS;
 
 import java.io.FileOutputStream;
@@ -27,6 +29,7 @@ import static org.junit.Assert.*;
  */
 @RunWith(JUnit4.class)
 public class DatabaseShellTest extends InterpreterTestBase<SingleDatabaseShellState> {
+
     @BeforeClass
     public static void globalPrepareDatabaseShellTest() {
         System.setProperty(SingleDatabaseShellState.DB_DIRECTORY_PROPERTY_NAME, DB_ROOT.toString());
@@ -39,7 +42,7 @@ public class DatabaseShellTest extends InterpreterTestBase<SingleDatabaseShellSt
     }
 
     @Test
-    public void testFailPersistOnExit() throws TerminalException {
+    public void testFailPersistOnExit() throws TerminalException, DatabaseIOException {
         MutatedSDSS state = new MutatedSDSS(0);
         interpreter = new Shell<>(state);
 
@@ -76,7 +79,7 @@ public class DatabaseShellTest extends InterpreterTestBase<SingleDatabaseShellSt
 
     @Override
     protected Shell<SingleDatabaseShellState> constructInterpreter() throws TerminalException {
-        return new Shell<>(new SingleDatabaseShellState());
+        return new Shell<>(new SingleFactoryDatabaseShellState());
     }
 
     @After
@@ -143,7 +146,7 @@ public class DatabaseShellTest extends InterpreterTestBase<SingleDatabaseShellSt
     }
 
     @Test
-    public void testCommitFail() throws TerminalException {
+    public void testCommitFail() throws TerminalException, DatabaseIOException {
         interpreter = new Shell<>(new MutatedSDSS(0));
 
         runBatchExpectNonZero("create t1 (String)", "use t1", "put a [\"b\"]", "commit");
@@ -289,7 +292,7 @@ public class DatabaseShellTest extends InterpreterTestBase<SingleDatabaseShellSt
     }
 
     @Test
-    public void testInitWithFarNotExistingDir() throws TerminalException {
+    public void testInitWithFarNotExistingDir() throws TerminalException, DatabaseIOException {
         System.setProperty(
                 SingleDatabaseShellState.DB_DIRECTORY_PROPERTY_NAME,
                 DB_ROOT.resolve("path1").resolve("path2").toString());
@@ -299,7 +302,7 @@ public class DatabaseShellTest extends InterpreterTestBase<SingleDatabaseShellSt
                 "Database directory parent path does not exist or is not a " + "directory");
 
         try {
-            interpreter = new Shell<>(new SingleDatabaseShellState());
+            constructInterpreter();
         } finally {
             System.setProperty(
                     SingleDatabaseShellState.DB_DIRECTORY_PROPERTY_NAME, DB_ROOT.toString());
@@ -307,14 +310,14 @@ public class DatabaseShellTest extends InterpreterTestBase<SingleDatabaseShellSt
     }
 
     @Test
-    public void testInitWithNullDir() throws TerminalException {
+    public void testInitWithNullDir() throws TerminalException, DatabaseIOException {
         System.getProperties().remove(SingleDatabaseShellState.DB_DIRECTORY_PROPERTY_NAME);
 
         exception.expect(TerminalException.class);
         exception.expectMessage("Please mention database directory");
 
         try {
-            interpreter = new Shell<>(new SingleDatabaseShellState());
+            constructInterpreter();
         } finally {
             System.setProperty(
                     SingleDatabaseShellState.DB_DIRECTORY_PROPERTY_NAME, DB_ROOT.toString());

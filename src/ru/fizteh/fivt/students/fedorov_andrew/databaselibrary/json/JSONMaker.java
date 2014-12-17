@@ -1,11 +1,10 @@
 package ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.json;
 
-import java.lang.annotation.Annotation;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.Utility;
+
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.util.Arrays;
 import java.util.IdentityHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -17,27 +16,10 @@ import static ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.json.JSONHe
  * This class helps to construct a JSON string from any object using special annotations.
  * @author Phoenix
  * @see JSONComplexObject
- * @see JSONField
+ * @see ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.json.JSONField
  */
 public final class JSONMaker {
     private JSONMaker() { }
-
-    private static List<Field> getAnnotatedFields(Class<?> searchableClass,
-                                                  Class<? extends Annotation> annoClass) {
-        List<Field> gatheredFields = new LinkedList<>();
-
-        while (searchableClass != Object.class) {
-            Arrays.stream(searchableClass.getDeclaredFields()).forEach(
-                    (field) -> {
-                        if (field.getAnnotation(annoClass) != null) {
-                            gatheredFields.add(field);
-                        }
-                    });
-            searchableClass = searchableClass.getSuperclass();
-        }
-
-        return gatheredFields;
-    }
 
     /**
      * Appends JSON interpretation of obj to the given string builder.
@@ -75,7 +57,52 @@ public final class JSONMaker {
 
         Class<?> objClass = obj.getClass();
 
-        if (obj instanceof Map) {
+        if (objClass.getAnnotation(JSONComplexObject.class) != null) {
+            // Convenience trick.
+            FieldJSONAppender jsonAppender = (field, overrideName) -> {
+                String fieldName = field.getAnnotation(JSONField.class).name();
+                boolean accessible = field.isAccessible();
+                field.setAccessible(true);
+
+                if (overrideName != null && overrideName.isEmpty()) {
+                    if (fieldName.isEmpty()) {
+                        overrideName = field.getName();
+                    } else {
+                        overrideName = fieldName;
+                    }
+                }
+
+                appendJSONString(
+                        sb, field.get(obj), overrideName, identityMap);
+                field.setAccessible(accessible);
+            };
+
+            // Fields to convert to json.
+            List<Field> annotatedFields = Utility.getAllAnnotatedFields(objClass, JSONField.class);
+            if (annotatedFields.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "Illegal annotation @JSONComplexObject: there are no @JSONField annotated fields");
+            } else if (objClass.getAnnotation(JSONComplexObject.class).wrapper()) {
+                if (annotatedFields.size() > 1) {
+                    throw new IllegalArgumentException(
+                            "Illegal annotation @JSONComplexObject: there are more then one @JSONField");
+                }
+                jsonAppender.appendInfo(annotatedFields.get(0), name);
+
+            } else {
+                sb.append(OPENING_CURLY_BRACE);
+                boolean comma = false;
+
+                for (Field field : annotatedFields) {
+                    if (comma) {
+                        sb.append(ELEMENT_SEPARATOR);
+                    }
+                    comma = true;
+                    jsonAppender.appendInfo(field);
+                }
+                sb.append(CLOSING_CURLY_BRACE);
+            }
+        } else if (obj instanceof Map) {
             sb.append(OPENING_CURLY_BRACE);
             Set<Entry> set = ((Map) obj).entrySet();
 
@@ -113,51 +140,6 @@ public final class JSONMaker {
             sb.append(obj.toString());
         } else if (obj instanceof Boolean) {
             sb.append(obj.toString());
-        } else if (objClass.getAnnotation(JSONComplexObject.class) != null) {
-            // Convenience trick.
-            FieldJSONAppender jsonAppender = (field, overrideName) -> {
-                String fieldName = field.getAnnotation(JSONField.class).name();
-                boolean accessible = field.isAccessible();
-                field.setAccessible(true);
-
-                if (overrideName != null && overrideName.isEmpty()) {
-                    if (fieldName.isEmpty()) {
-                        overrideName = field.getName();
-                    } else {
-                        overrideName = fieldName;
-                    }
-                }
-
-                appendJSONString(
-                        sb, field.get(obj), overrideName, identityMap);
-                field.setAccessible(accessible);
-            };
-
-            // Fields to convert to json.
-            List<Field> annotatedFields = getAnnotatedFields(objClass, JSONField.class);
-            if (annotatedFields.isEmpty()) {
-                throw new IllegalArgumentException(
-                        "Illegal annotation @JSONComplexObject: there are no @JSONField annotated fields");
-            } else if (objClass.getAnnotation(JSONComplexObject.class).wrapper()) {
-                if (annotatedFields.size() > 1) {
-                    throw new IllegalArgumentException(
-                            "Illegal annotation @JSONComplexObject: there are more then one @JSONField");
-                }
-                jsonAppender.appendInfo(annotatedFields.get(0), name);
-
-            } else {
-                sb.append(OPENING_CURLY_BRACE);
-                boolean comma = false;
-
-                for (Field field : annotatedFields) {
-                    if (comma) {
-                        sb.append(ELEMENT_SEPARATOR);
-                    }
-                    comma = true;
-                    jsonAppender.appendInfo(field);
-                }
-                sb.append(CLOSING_CURLY_BRACE);
-            }
         } else {
             sb.append(QUOTES).append(JSONHelper.escape(obj.toString())).append(QUOTES);
         }
@@ -187,7 +169,7 @@ public final class JSONMaker {
      * @see Object#toString()
      * @see Number
      * @see JSONComplexObject
-     * @see JSONField
+     * @see ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.json.JSONField
      */
     public static String makeJSON(Object object) throws RuntimeException {
         try {

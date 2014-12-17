@@ -19,7 +19,7 @@ public class Log {
     /**
      * If logging is disabled, no messages are output
      */
-    private static boolean enableLogging = false;
+    private static boolean enableLogging = true;
     /**
      * Writer to the log file.
      */
@@ -58,6 +58,10 @@ public class Log {
 
     public static synchronized void log(Class<?> logger, String message) {
         log(logger, null, message);
+    }
+
+    public static synchronized void log(Class<?> logger, Throwable throwable) {
+        log(logger, throwable, null);
     }
 
     public static synchronized void log(Class<?> logger, Throwable throwable, String message) {

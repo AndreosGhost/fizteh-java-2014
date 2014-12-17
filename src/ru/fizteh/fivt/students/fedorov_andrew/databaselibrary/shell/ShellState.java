@@ -2,12 +2,19 @@ package ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.shell;
 
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.ExitRequest;
 
+import java.io.PrintStream;
+
 /**
  * Base interface that encapsulates all data and commands to work with.
  * @param <S>
  *         Implementation of this interface
  */
 public interface ShellState<S extends ShellState<S>> extends CommandContainer<S> {
+    /**
+     * Terminal output stream for printing messages.
+     */
+    PrintStream getOutputStream();
+
     /**
      * Performs clean up after all work is done and the shell is going to exit.
      */

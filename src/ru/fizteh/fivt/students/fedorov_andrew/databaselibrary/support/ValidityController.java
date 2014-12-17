@@ -33,7 +33,7 @@ public final class ValidityController {
      * Returns activated lock on the use of the object. While object is used, nobody can invalidate it
      * (except
      * the host thread of this lock).
-     * @throws java.lang.IllegalStateException
+     * @throws IllegalStateException
      *         if this object has been already invalidated.
      */
     public UseLock use() throws IllegalStateException {
@@ -49,7 +49,7 @@ public final class ValidityController {
 
     /**
      * Returns activated unique lock for the use of the object. After use object is invalidated.
-     * @throws java.lang.IllegalStateException
+     * @throws IllegalStateException
      *         if this object has been already invalidated.
      */
     public KillLock useAndKill() throws IllegalStateException {

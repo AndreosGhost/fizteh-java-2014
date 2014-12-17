@@ -1,9 +1,10 @@
 package ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support;
 
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.TerminalException;
-import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.shell.Commands;
 
 import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
@@ -12,9 +13,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.text.ParseException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -33,29 +37,6 @@ public final class Utility {
                 throw new IllegalArgumentException(
                         "wrong type (" + type.getSimpleName() + " is not supported)");
             }
-        }
-    }
-
-    /**
-     * Handles an occurred exception.
-     * @param cause
-     *         occurred exception. If null, an {@link Exception} is constructed via {@link
-     *         Exception#Exception(String)}.
-     * @param message
-     *         message that can be reported to user and is written to log.
-     * @param reportToUser
-     *         if true, message is printed to {@link System#err}.
-     */
-    public static void handleError(String message, Throwable cause, boolean reportToUser)
-            throws TerminalException {
-        if (reportToUser) {
-            System.err.println(message == null ? cause.getMessage() : message);
-        }
-        Log.log(Commands.class, cause, message);
-        if (cause == null) {
-            throw new TerminalException(message);
-        } else {
-            throw new TerminalException(message, cause);
         }
     }
 
@@ -232,7 +213,7 @@ public final class Utility {
      * @param escapeSequence
      *         Escape sequence. Quotes and this sequence occurrences will be prepended by escape sequence.
      * @return Endcoded string inside quotes. Returns null for null string.
-     * @see Utility#unquoteString(String,
+     * @see ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.Utility#unquoteString(String,
      * String, String)
      */
     public static String quoteString(String s, String quoteSequence, String escapeSequence) {
@@ -299,6 +280,23 @@ public final class Utility {
         }
 
         return -1;
+    }
+
+    public static List<Field> getAllAnnotatedFields(Class<?> searchableClass,
+                                                    Class<? extends Annotation> annoClass) {
+        List<Field> gatheredFields = new LinkedList<>();
+
+        while (searchableClass != Object.class) {
+            Arrays.stream(searchableClass.getDeclaredFields()).forEach(
+                    (field) -> {
+                        if (field.getAnnotation(annoClass) != null) {
+                            gatheredFields.add(field);
+                        }
+                    });
+            searchableClass = searchableClass.getSuperclass();
+        }
+
+        return gatheredFields;
     }
 
     /**

@@ -140,7 +140,7 @@ public class UtilityTest {
         exception.expectMessage("Source map contains at least two duplicate values");
 
         Utility.inverseMap(
-                new ConvenientMap<>(new HashMap<>()).putNext(1, 2).putNext(
+                new ConvenientMap<>(new HashMap<>()).chainPut(1, 2).chainPut(
                         2, 2));
     }
 

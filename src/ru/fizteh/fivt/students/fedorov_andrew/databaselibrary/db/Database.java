@@ -6,19 +6,20 @@ import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.Database
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.NoActiveTableException;
 
 import java.io.IOException;
-import java.nio.file.Path;
+import java.io.PrintStream;
 import java.util.List;
 
 /**
  * Database class responsible for a set of tables assigned to it.
  * @author phoenix
  */
-public class Database implements AutoCloseable {
+public class Database {
     private final TableProvider provider;
     /**
      * Root directory of all database files
      */
-    private final Path dbDirectory;
+    private final String dbDirectory;
+    private final PrintStream outputStream;
     /**
      * Table in use.<br/> All operations (like {@code put}, {@code get}, etc.) are performed with
      * this table.
@@ -28,12 +29,11 @@ public class Database implements AutoCloseable {
     /**
      * Establishes a database instance on given folder.<br/> If the folder exists, the old database
      * is used.<br/> If the folder does not exist, a new database is created within the folder.
-     * @throws ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.DatabaseIOException
      */
-    public Database(Path dbDirectory) throws DatabaseIOException {
+    public Database(TableProvider provider, String dbDirectory, PrintStream outputStream) {
+        this.outputStream = outputStream;
         this.dbDirectory = dbDirectory;
-        DBTableProviderFactory factory = new DBTableProviderFactory();
-        this.provider = factory.create(dbDirectory.toString());
+        this.provider = provider;
     }
 
     public TableProvider getProvider() {
@@ -69,19 +69,12 @@ public class Database implements AutoCloseable {
         }
     }
 
-    @Override
-    public void close() throws Exception {
-        if (provider instanceof AutoCloseable) {
-            ((AutoCloseable) provider).close();
-        }
-    }
-
     public Table getActiveTable() throws NoActiveTableException {
         checkCurrentTableIsOpen();
         return activeTable;
     }
 
-    public Path getDbDirectory() {
+    public String getDbDirectory() {
         return dbDirectory;
     }
 
@@ -106,9 +99,10 @@ public class Database implements AutoCloseable {
     }
 
     public void showTables() {
-        System.out.println("table_name row_count");
+        outputStream.println("table_name row_count");
         List<String> tableNames = provider.getTableNames();
 
+        StringBuilder sb = new StringBuilder();
         for (String tableName : tableNames) {
             boolean valid;
             int changesCount = 0;
@@ -121,8 +115,10 @@ public class Database implements AutoCloseable {
                 valid = false;
             }
 
-            System.out.println(String.format("%s %s", tableName, valid ? changesCount : "corrupt"));
+            sb.append(String.format("%s %s", tableName, valid ? changesCount : "corrupt"));
+            sb.append(System.lineSeparator());
         }
+        outputStream.print(sb.toString());
     }
 
     /**

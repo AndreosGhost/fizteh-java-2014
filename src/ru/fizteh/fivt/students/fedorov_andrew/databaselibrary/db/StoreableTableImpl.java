@@ -32,13 +32,13 @@ import java.util.function.Consumer;
 
 public final class StoreableTableImpl implements AutoCloseableTable {
     private static final Map<Class<?>, String> CLASSES_TO_NAMES_MAP =
-            new ConvenientMap<>(new HashMap<Class<?>, String>()).putNext(Integer.class, "int")
-                                                                .putNext(Long.class, "long")
-                                                                .putNext(Byte.class, "byte")
-                                                                .putNext(Double.class, "double")
-                                                                .putNext(Float.class, "float")
-                                                                .putNext(Boolean.class, "boolean")
-                                                                .putNext(String.class, "String");
+            new ConvenientMap<>(new HashMap<Class<?>, String>()).chainPut(Integer.class, "int")
+                                                                .chainPut(Long.class, "long")
+                                                                .chainPut(Byte.class, "byte")
+                                                                .chainPut(Double.class, "double")
+                                                                .chainPut(Float.class, "float")
+                                                                .chainPut(Boolean.class, "boolean")
+                                                                .chainPut(String.class, "String");
 
     private static final Map<String, Class<?>> NAMES_TO_CLASSES_MAP =
             Utility.inverseMap(CLASSES_TO_NAMES_MAP);

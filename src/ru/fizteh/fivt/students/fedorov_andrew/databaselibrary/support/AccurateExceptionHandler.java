@@ -1,7 +1,5 @@
 package ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support;
 
-import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.TerminalException;
-
 /**
  * Interface for exception handlers that must intercept at least all checked exceptions.
  * @param <T>
@@ -11,5 +9,5 @@ import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.Terminal
  */
 @FunctionalInterface
 public interface AccurateExceptionHandler<T> {
-    void handleException(Exception exc, T additionalData) throws TerminalException;
+    void handleException(Exception exc, T additionalData);
 }

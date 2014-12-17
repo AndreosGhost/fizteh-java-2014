@@ -6,6 +6,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.rules.ExpectedException;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.DatabaseIOException;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.TerminalException;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.shell.Shell;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.shell.ShellState;
@@ -46,7 +47,7 @@ public abstract class InterpreterTestBase<ShellStateImpl extends ShellState<Shel
     protected abstract Shell<ShellStateImpl> constructInterpreter() throws TerminalException;
 
     @Before
-    public void prepare() throws TerminalException {
+    public void prepare() throws TerminalException, DatabaseIOException {
         interpreter = constructInterpreter();
     }
 
@@ -113,12 +114,8 @@ public abstract class InterpreterTestBase<ShellStateImpl extends ShellState<Shel
             }
         }
 
-        try {
-            if (interpreter == null || !interpreter.isValid()) {
-                interpreter = constructInterpreter();
-            }
-        } catch (TerminalException exc) {
-            throw new AssertionError(exc);
+        if (interpreter == null || !interpreter.isValid()) {
+            interpreter = constructInterpreter();
         }
         return interpreter.run(commands);
     }

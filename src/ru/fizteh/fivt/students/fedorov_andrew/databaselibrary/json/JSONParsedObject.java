@@ -8,11 +8,11 @@ import java.util.Map;
  * (correspondently).<br/>
  * Fields/elements of this object can be of the following types:
  * <ul>
- * <li>{@link java.lang.Long}</li>
- * <li>{@link java.lang.Double}</li>
- * <li>{@link java.lang.Boolean}</li>
- * <li>{@link java.lang.String}</li>
- * <li>{@link ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.json.JSONParsedObject}</li>
+ * <li>{@link Long}</li>
+ * <li>{@link Double}</li>
+ * <li>{@link Boolean}</li>
+ * <li>{@link String}</li>
+ * <li>{@link JSONParsedObject}</li>
  * </ul>
  */
 public interface JSONParsedObject {
@@ -22,7 +22,7 @@ public interface JSONParsedObject {
      *         name of the field.
      * @param value
      *         value of the field. Can be null.
-     * @throws java.lang.UnsupportedOperationException
+     * @throws UnsupportedOperationException
      */
     void put(String name, Object value) throws UnsupportedOperationException;
 
@@ -41,8 +41,8 @@ public interface JSONParsedObject {
      * @param name
      *         name of the field
      * @return null, {@link Integer}, {@link String}, {@link Double}, {@link Boolean} or {@link
-     * JSONParsedObject}.
-     * @throws java.lang.UnsupportedOperationException
+     * ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.json.JSONParsedObject}.
+     * @throws UnsupportedOperationException
      */
     Object get(String name) throws UnsupportedOperationException;
 
@@ -51,8 +51,8 @@ public interface JSONParsedObject {
      * @param index
      *         index of the element
      * @return null, {@link Integer}, {@link String}, {@link Double}, {@link Boolean} or {@link
-     * JSONParsedObject}.
-     * @throws java.lang.UnsupportedOperationException
+     * ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.json.JSONParsedObject}.
+     * @throws UnsupportedOperationException
      */
     Object get(int index) throws UnsupportedOperationException, ClassCastException;
 
@@ -88,13 +88,11 @@ public interface JSONParsedObject {
         return (Boolean) get(index);
     }
 
-    default JSONParsedObject getObject(String name)
-            throws UnsupportedOperationException, ClassCastException {
+    default JSONParsedObject getObject(String name) throws UnsupportedOperationException, ClassCastException {
         return (JSONParsedObject) get(name);
     }
 
-    default JSONParsedObject getObject(int index)
-            throws UnsupportedOperationException, ClassCastException {
+    default JSONParsedObject getObject(int index) throws UnsupportedOperationException, ClassCastException {
         return (JSONParsedObject) get(index);
     }
 
@@ -115,7 +113,7 @@ public interface JSONParsedObject {
      * @param namePieces
      *         consists of Strings and Integers. Each name piece causes associated object retrieval.
      * @return null, {@link Integer}, {@link String}, {@link Double}, {@link Boolean} or {@link
-     * JSONParsedObject}.
+     * ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.json.JSONParsedObject}.
      */
     Object deepGet(Object... namePieces);
 
@@ -126,13 +124,13 @@ public interface JSONParsedObject {
 
     /**
      * Returns this object as map. Unsupported for standard array respresentations.
-     * @throws java.lang.UnsupportedOperationException
+     * @throws UnsupportedOperationException
      */
     Map<String, Object> asMap() throws UnsupportedOperationException;
 
     /**
      * Returns this object as array. Unsupported for associative array representations.
-     * @throws java.lang.UnsupportedOperationException
+     * @throws UnsupportedOperationException
      */
     Object[] asArray() throws UnsupportedOperationException;
 

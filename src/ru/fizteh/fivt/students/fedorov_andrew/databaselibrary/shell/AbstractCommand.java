@@ -7,6 +7,7 @@ import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.WrongArg
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.AccurateExceptionHandler;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.text.ParseException;
 
 import static ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.Utility.*;
@@ -15,16 +16,16 @@ import static ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.Uti
  * Convenience class for Commands.
  * @author phoenix
  */
-public abstract class AbstractCommand implements Command<SingleDatabaseShellState> {
+public abstract class AbstractCommand<State extends ShellState<State>> implements Command<State> {
     private static final Class<?>[] EXECUTE_SAFELY_THROWN_EXCEPTIONS =
             obtainExceptionsThrownByExecuteSafely();
     /**
      * Used for unsafe calls. Catches and handles all exceptions thrown by {@link
-     * ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.shell.AbstractCommand#executeSafely
+     * AbstractCommand#executeSafely
      * (SingleDatabaseShellState, String[]) } and {@link IllegalArgumentException }.
      */
-    static final AccurateExceptionHandler<SingleDatabaseShellState> DATABASE_ERROR_HANDLER =
-            (Exception exc, SingleDatabaseShellState shell) -> {
+    static final AccurateExceptionHandler<PrintStream> DATABASE_ERROR_HANDLER =
+            (Exception exc, PrintStream ps) -> {
                 boolean found = false;
                 Class<?> actualType = exc.getClass();
 
@@ -39,7 +40,7 @@ public abstract class AbstractCommand implements Command<SingleDatabaseShellStat
                 }
 
                 if (found) {
-                    handleError(exc.getMessage(), exc, true);
+                    Shell.handleError(exc.getMessage(), exc, true, ps);
                 } else if (exc instanceof RuntimeException) {
                     throw (RuntimeException) exc;
                 } else {
@@ -72,9 +73,8 @@ public abstract class AbstractCommand implements Command<SingleDatabaseShellStat
         Class<?>[] exceptions;
 
         try {
-            exceptions = AbstractCommand.class
-                    .getMethod("executeSafely", SingleDatabaseShellState.class, String[].class)
-                    .getExceptionTypes();
+            exceptions = AbstractCommand.class.getMethod("executeSafely", ShellState.class, String[].class)
+                                              .getExceptionTypes();
         } catch (Exception exc) {
             throw new RuntimeException("Failed to obtain exceptions thrown by executeSafely");
         }
@@ -85,15 +85,17 @@ public abstract class AbstractCommand implements Command<SingleDatabaseShellStat
      * In implementation of {@link ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.shell
      * .AbstractCommand}
      * arguments number is checked first and then
-     * {@link #executeSafely(SingleDatabaseShellState, String[])} is invoked.<br/> If you want to
-     * disable forced arguments number checking, override this method without invocation super
-     * method and put empty implementation inside {@link #executeSafely(SingleDatabaseShellState,
-     * String[])}.
+     * {@link #executeSafely(State, String[])} is invoked.<br/>
+     * If you want to disable forced arguments number checking, override this method without invocation super
+     * method and put empty implementation inside {@link #executeSafely(State, String[])}.
      */
     @Override
-    public void execute(final SingleDatabaseShellState state, final String[] args) throws TerminalException {
-        checkArgsNumber(args, minimalArgsCount, maximalArgsCount);
-        performAccurately(() -> executeSafely(state, args), DATABASE_ERROR_HANDLER, state);
+    public void execute(final State state, final String[] args) throws TerminalException {
+        performAccurately(
+                () -> {
+                    checkArgsNumber(args, minimalArgsCount, maximalArgsCount);
+                    executeSafely(state, args);
+                }, DATABASE_ERROR_HANDLER, state.getOutputStream());
     }
 
     @Override
@@ -106,17 +108,18 @@ public abstract class AbstractCommand implements Command<SingleDatabaseShellStat
         return invocationArgs;
     }
 
-    public abstract void executeSafely(SingleDatabaseShellState shell, String[] args) throws
-                                                                                      IllegalArgumentException,
-                                                                                      NoActiveTableException,
-                                                                                      IllegalStateException,
-                                                                                      InvocationException,
-                                                                                      ParseException,
-                                                                                      IOException;
+    public abstract void executeSafely(State state, String[] args) throws
+                                                                   IllegalArgumentException,
+                                                                   NoActiveTableException,
+                                                                   IllegalStateException,
+                                                                   NullPointerException,
+                                                                   InvocationException,
+                                                                   ParseException,
+                                                                   IOException;
 
-    void checkArgsNumber(String[] args, int minimal, int maximal) throws TerminalException {
+    void checkArgsNumber(String[] args, int minimal, int maximal) throws WrongArgsNumberException {
         if (args.length < minimal || args.length > maximal) {
-            handleError(null, new WrongArgsNumberException(this, args[0]), true);
+            throw new WrongArgsNumberException(this, args[0]);
         }
     }
 }

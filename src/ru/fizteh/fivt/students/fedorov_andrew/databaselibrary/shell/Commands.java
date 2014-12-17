@@ -18,74 +18,85 @@ import java.util.Map.Entry;
 
 public class Commands extends SimpleCommandContainer<SingleDatabaseShellState> {
     public static final Command<SingleDatabaseShellState> COMMIT =
-            new AbstractCommand(null, "saves all changes made from the last commit", 1) {
+            new AbstractCommand<SingleDatabaseShellState>(
+                    null, "saves all changes made from the last commit", 1) {
                 @Override
                 public void executeSafely(SingleDatabaseShellState state, String[] args)
                         throws IOException, IllegalArgumentException {
                     int changes = state.getActiveDatabase().commit();
-                    System.out.println(changes);
+                    state.getOutputStream().println(changes);
                 }
             };
     public static final Command<SingleDatabaseShellState> ROLLBACK =
-            new AbstractCommand(null, "cancels all changes made from the last commit", 1) {
+            new AbstractCommand<SingleDatabaseShellState>(
+                    null, "cancels all changes made from the last commit", 1) {
 
                 @Override
                 public void executeSafely(SingleDatabaseShellState state, String[] args)
                         throws DatabaseIOException, IllegalArgumentException {
                     int changes = state.getActiveDatabase().rollback();
-                    System.out.println(changes);
+                    state.getOutputStream().println(changes);
                 }
             };
     public static final Command<SingleDatabaseShellState> SIZE =
-            new AbstractCommand(null, "prints count of stored keys in current table", 1) {
+            new AbstractCommand<SingleDatabaseShellState>(
+                    null, "prints count of stored keys in current table", 1) {
                 @Override
                 public void executeSafely(SingleDatabaseShellState state, String[] args)
                         throws DatabaseIOException, IllegalArgumentException, NoActiveTableException {
                     int size = state.getActiveDatabase().getActiveTable().size();
-                    System.out.println(size);
+                    state.getOutputStream().println(size);
                 }
             };
-    public static final Command<SingleDatabaseShellState> CREATE = new AbstractCommand(
-            "<tablename> (type0 type1 ... typeN)",
-            "creates a new table with the given name and column types (must be specified inside round "
-            + "brackets); type can be one of the following: int, long, byte, float, double, boolean, String;",
-            3,
-            Integer.MAX_VALUE) {
-        @Override
-        public void executeSafely(SingleDatabaseShellState state, String[] args)
-                throws IOException, InvocationException {
-            if (!args[2].startsWith("(") || !args[args.length - 1].endsWith(")")) {
-                throw new InvocationException(
-                        this, args[0], "Round brackets must exist and contain types list inside them");
-            }
+    public static final Command<SingleDatabaseShellState> CREATE =
+            new AbstractCommand<SingleDatabaseShellState>(
+                    "<tablename> (type0 type1 ... typeN)",
+                    "creates a new table with the given name and column types (must be specified inside "
+                    + "round "
+                    + "brackets); type can be one of the following: int, long, byte, float, double, "
+                    + "boolean, String;",
+                    3,
+                    Integer.MAX_VALUE) {
+                @Override
+                public void executeSafely(SingleDatabaseShellState state, String[] args)
+                        throws IOException, InvocationException {
+                    if (!args[2].startsWith("(") || !args[args.length - 1].endsWith(")")) {
+                        throw new InvocationException(
+                                this,
+                                args[0],
+                                "Round brackets must exist and contain types list inside them");
+                    }
 
-            // Joining strings.
-            String typesString = String.join(" ", Arrays.asList(args).subList(2, args.length));
+                    // Joining strings.
+                    String typesString = String.join(" ", Arrays.asList(args).subList(2, args.length));
 
-            // Removing brackets.
-            typesString = typesString.substring(1, typesString.length() - 1).trim();
+                    // Removing brackets.
+                    typesString = typesString.substring(1, typesString.length() - 1).trim();
 
-            List<Class<?>> columnTypes = StoreableTableImpl.parseColumnTypes(typesString);
-            String tableName = args[1];
+                    List<Class<?>> columnTypes = StoreableTableImpl.parseColumnTypes(typesString);
+                    String tableName = args[1];
 
-            boolean created = state.getActiveDatabase().createTable(tableName, columnTypes);
-            if (created) {
-                System.out.println("created");
-            } else {
-                throw new DatabaseIOException(tableName + " exists");
-            }
-        }
-    };
-    public static final Command<SingleDatabaseShellState> DROP = new AbstractCommand(
-            "<tablename>", "deletes table with the given name from file system", 2) {
-        @Override
-        public void executeSafely(SingleDatabaseShellState state, final String[] args) throws IOException {
-            state.getActiveDatabase().dropTable(args[1]);
-            System.out.println("dropped");
-        }
-    };
+                    boolean created = state.getActiveDatabase().createTable(tableName, columnTypes);
+                    if (created) {
+                        state.getOutputStream().println("created");
+                    } else {
+                        throw new DatabaseIOException(tableName + " exists");
+                    }
+                }
+            };
+    public static final Command<SingleDatabaseShellState> DROP =
+            new AbstractCommand<SingleDatabaseShellState>(
+                    "<tablename>", "deletes table with the given name from file system", 2) {
+                @Override
+                public void executeSafely(SingleDatabaseShellState state, final String[] args)
+                        throws IOException {
+                    state.getActiveDatabase().dropTable(args[1]);
+                    state.getOutputStream().println("dropped");
+                }
+            };
     public static final Command<SingleDatabaseShellState> EXIT =
-            new AbstractCommand(null, "saves all data to file system and stops interpretation", 1) {
+            new AbstractCommand<SingleDatabaseShellState>(
+                    null, "saves all data to file system and stops interpretation", 1) {
                 @Override
                 public void execute(SingleDatabaseShellState state, String[] args) throws TerminalException {
                     int exitCode = 0;
@@ -94,7 +105,7 @@ public class Commands extends SimpleCommandContainer<SingleDatabaseShellState> {
                         state.persist();
                     } catch (Exception exc) {
                         exitCode = 1;
-                        DATABASE_ERROR_HANDLER.handleException(exc, state);
+                        DATABASE_ERROR_HANDLER.handleException(exc, state.getOutputStream());
                     } finally {
                         state.prepareToExit(exitCode);
                     }
@@ -104,13 +115,13 @@ public class Commands extends SimpleCommandContainer<SingleDatabaseShellState> {
                 }
 
                 @Override
-                public void executeSafely(SingleDatabaseShellState shell, String[] args)
+                public void executeSafely(SingleDatabaseShellState state, String[] args)
                         throws DatabaseIOException, IllegalArgumentException {
                     // Not used.
                 }
             };
     public static final Command<SingleDatabaseShellState> GET =
-            new AbstractCommand("<key>", "obtains value by the key", 2) {
+            new AbstractCommand<SingleDatabaseShellState>("<key>", "obtains value by the key", 2) {
                 @Override
                 public void executeSafely(SingleDatabaseShellState state, final String[] args)
                         throws NoActiveTableException {
@@ -124,46 +135,42 @@ public class Commands extends SimpleCommandContainer<SingleDatabaseShellState> {
                     if (value == null) {
                         throw new IllegalArgumentException("not found");
                     } else {
-                        System.out.println("found");
-                        System.out.println(provider.serialize(table, value));
+                        state.getOutputStream().println("found");
+                        state.getOutputStream().println(provider.serialize(table, value));
                     }
                 }
             };
-    public static final Command<SingleDatabaseShellState> HELP = new AbstractCommand(
-            null, "prints out description of state commands", 1, Integer.MAX_VALUE) {
-        @Override
-        public void execute(SingleDatabaseShellState state, String[] args) {
-            Map<String, Command<SingleDatabaseShellState>> commands = state.getCommands();
+    public static final Command<SingleDatabaseShellState> HELP =
+            new AbstractCommand<SingleDatabaseShellState>(
+                    null, "prints out description of state commands", 1, Integer.MAX_VALUE) {
+                @Override
+                public void execute(SingleDatabaseShellState state, String[] args) {
+                    Map<String, Command<SingleDatabaseShellState>> commands = state.getCommands();
 
-            System.out.println(
-                    "DatabaseLibrary is an utility that lets you work with a simple database");
+                    state.getOutputStream().println(
+                            "DatabaseLibrary is an utility that lets you work with a simple database");
 
-            System.out.println(
-                    String.format(
-                            "You can set database directory to work with using environment "
-                            + "variable '%s'", SingleDatabaseShellState.DB_DIRECTORY_PROPERTY_NAME));
+                    state.getOutputStream().println(
+                            String.format(
+                                    "You can set database directory to work with using environment "
+                                    + "variable '%s'", SingleDatabaseShellState.DB_DIRECTORY_PROPERTY_NAME));
 
-            for (Entry<String, Command<SingleDatabaseShellState>> cmdEntry : commands.entrySet()) {
-                String cmdName = cmdEntry.getKey();
-                Command<SingleDatabaseShellState> command = cmdEntry.getValue();
+                    for (Entry<String, Command<SingleDatabaseShellState>> cmdEntry : commands.entrySet()) {
+                        String cmdName = cmdEntry.getKey();
+                        Command<SingleDatabaseShellState> command = cmdEntry.getValue();
 
-                System.out.println(
-                        String.format(
-                                "\t%s%s\t%s",
-                                cmdName,
-                                command.getInvocation() == null ? "" : (' ' + command.getInvocation()),
-                                command.getInfo()));
+                        state.getOutputStream().println(command.buildHelpLine(cmdName));
+                    }
+                }
 
-            }
-        }
-
-        @Override
-        public void executeSafely(SingleDatabaseShellState state, String[] args) throws DatabaseIOException {
-            // not used
-        }
-    };
+                @Override
+                public void executeSafely(SingleDatabaseShellState state, String[] args)
+                        throws DatabaseIOException {
+                    // not used
+                }
+            };
     public static final Command<SingleDatabaseShellState> LIST =
-            new AbstractCommand(null, "prints all keys stored in the map", 1) {
+            new AbstractCommand<SingleDatabaseShellState>(null, "prints all keys stored in the map", 1) {
                 @Override
                 public void executeSafely(SingleDatabaseShellState state, String[] args)
                         throws NoActiveTableException {
@@ -177,10 +184,10 @@ public class Commands extends SimpleCommandContainer<SingleDatabaseShellState> {
                         comma = true;
                     }
 
-                    System.out.println(sb);
+                    state.getOutputStream().println(sb);
                 }
             };
-    public static final Command<SingleDatabaseShellState> PUT = new AbstractCommand(
+    public static final Command<SingleDatabaseShellState> PUT = new AbstractCommand<SingleDatabaseShellState>(
             "<key> [ {boolean|number|string|null}... ]",
             "assigns new storeable to the key",
             3,
@@ -198,16 +205,16 @@ public class Commands extends SimpleCommandContainer<SingleDatabaseShellState> {
             Storeable oldValue = state.getActiveTable().put(key, value);
 
             if (oldValue == null) {
-                System.out.println("new");
+                state.getOutputStream().println("new");
             } else {
                 String oldValueStr = state.getProvider().serialize(table, oldValue);
-                System.out.println("overwrite");
-                System.out.println("old " + oldValueStr);
+                state.getOutputStream().println("overwrite");
+                state.getOutputStream().println("old " + oldValueStr);
             }
         }
     };
     public static final Command<SingleDatabaseShellState> REMOVE =
-            new AbstractCommand("<key>", "removes value by the key", 2) {
+            new AbstractCommand<SingleDatabaseShellState>("<key>", "removes value by the key", 2) {
                 @Override
                 public void executeSafely(SingleDatabaseShellState state, String[] args)
                         throws DatabaseIOException, NoActiveTableException {
@@ -218,27 +225,28 @@ public class Commands extends SimpleCommandContainer<SingleDatabaseShellState> {
                     if (oldValue == null) {
                         throw new DatabaseIOException("not found");
                     } else {
-                        System.out.println("removed");
+                        state.getOutputStream().println("removed");
                     }
                 }
             };
-    public static final Command<SingleDatabaseShellState> SHOW = new AbstractCommand(
-            "tables", "prints info on all tables assigned to the working database", 2) {
-        @Override
-        public void executeSafely(SingleDatabaseShellState state, String[] args)
-                throws IllegalArgumentException {
-            switch (args[1]) {
-            case "tables": {
-                state.getActiveDatabase().showTables();
-                break;
-            }
-            default: {
-                throw new IllegalArgumentException("show: unexpected option: " + args[1]);
-            }
-            }
-        }
-    };
-    public static final Command<SingleDatabaseShellState> USE = new AbstractCommand(
+    public static final Command<SingleDatabaseShellState> SHOW =
+            new AbstractCommand<SingleDatabaseShellState>(
+                    "tables", "prints info on all tables assigned to the working database", 2) {
+                @Override
+                public void executeSafely(SingleDatabaseShellState state, String[] args)
+                        throws IllegalArgumentException {
+                    switch (args[1]) {
+                    case "tables": {
+                        state.getActiveDatabase().showTables();
+                        break;
+                    }
+                    default: {
+                        throw new IllegalArgumentException("show: unexpected option: " + args[1]);
+                    }
+                    }
+                }
+            };
+    public static final Command<SingleDatabaseShellState> USE = new AbstractCommand<SingleDatabaseShellState>(
             "<tablename>",
             "saves all changes made to the current table (if present) and makes table"
             + " with the given name the current one",
@@ -247,7 +255,7 @@ public class Commands extends SimpleCommandContainer<SingleDatabaseShellState> {
         public void executeSafely(final SingleDatabaseShellState state, final String[] args)
                 throws IOException {
             state.getActiveDatabase().useTable(args[1]);
-            System.out.println("using " + args[1]);
+            state.getOutputStream().println("using " + args[1]);
         }
     };
     private static final Commands INSTANCE = new Commands();

@@ -9,7 +9,7 @@ import java.util.stream.Stream;
 
 /**
  * Usual collection over the given base collection with extension {@link ru.fizteh.fivt.students
- * .fedorov_andrew.databaselibrary.support.ConvenientCollection#addNext
+ * .fedorov_andrew.databaselibrary.support.ConvenientCollection#chainAdd
  * (Object)}.
  */
 public class ConvenientCollection<T> implements Collection<T> {
@@ -19,7 +19,7 @@ public class ConvenientCollection<T> implements Collection<T> {
         this.collection = base;
     }
 
-    public ConvenientCollection<T> addNext(T element) {
+    public ConvenientCollection<T> chainAdd(T element) {
         collection.add(element);
         return this;
     }

@@ -4,7 +4,7 @@ import ru.fizteh.fivt.proxy.LoggingProxyFactory;
 import ru.fizteh.fivt.storage.structured.TableProviderFactory;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.DatabaseIOException;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.Log;
-import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.LoggingProxyFactoryImpl;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.LoggingProxyFactoryJSON;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.Utility;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.ValidityController;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.ValidityController.KillLock;
@@ -21,7 +21,7 @@ import java.nio.file.Paths;
 import java.util.IdentityHashMap;
 
 public final class DBTableProviderFactory implements TableProviderFactory, AutoCloseable {
-    private static final LoggingProxyFactory LOGGING_PROXY_FACTORY = new LoggingProxyFactoryImpl();
+    private static final LoggingProxyFactory LOGGING_PROXY_FACTORY = new LoggingProxyFactoryJSON();
     private static final Writer LOG_WRITER;
 
     static {
@@ -41,6 +41,8 @@ public final class DBTableProviderFactory implements TableProviderFactory, AutoC
     private final IdentityHashMap<AutoCloseableProvider, Boolean> generatedProviders =
             new IdentityHashMap<>();
 
+    private boolean providerClosedByMe = false;
+
     static <T> T wrapImplementation(T implementation, Class<T> interfaceClass) {
         if (LOG_WRITER != null) {
             return (T) LOGGING_PROXY_FACTORY.wrap(LOG_WRITER, implementation, interfaceClass);
@@ -52,10 +54,13 @@ public final class DBTableProviderFactory implements TableProviderFactory, AutoC
     @Override
     public synchronized void close() {
         try (KillLock lock = validityController.useAndKill()) {
+            providerClosedByMe = true;
             for (AutoCloseableProvider provider : generatedProviders.keySet()) {
                 provider.close();
             }
             generatedProviders.clear();
+        } finally {
+            providerClosedByMe = false;
         }
     }
 
@@ -66,7 +71,9 @@ public final class DBTableProviderFactory implements TableProviderFactory, AutoC
      */
     synchronized void onProviderClosed(AutoCloseableProvider provider) {
         try (UseLock useLock = validityController.use()) {
-            generatedProviders.remove(provider);
+            if (!providerClosedByMe) {
+                generatedProviders.remove(provider);
+            }
         }
     }
 

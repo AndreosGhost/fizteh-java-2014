@@ -10,6 +10,7 @@ import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.json.JSONParsedObj
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.json.JSONParser;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.ConvenientCollection;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.ConvenientMap;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.Log;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.Utility;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.ValidityController;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.ValidityController.KillLock;
@@ -36,14 +37,14 @@ final class DBTableProvider implements AutoCloseableProvider {
     private static final char QUOTE_CHARACTER = '\"';
 
     private static final Collection<Class<?>> SUPPORTED_TYPES = new ConvenientCollection<>(
-            new HashSet<Class<?>>()).addNext(Integer.class).addNext(Long.class).addNext(Byte.class)
-                                    .addNext(Double.class).addNext(Float.class).addNext(Boolean.class)
-                                    .addNext(String.class);
+            new HashSet<Class<?>>()).chainAdd(Integer.class).chainAdd(Long.class).chainAdd(Byte.class)
+                                    .chainAdd(Double.class).chainAdd(Float.class).chainAdd(Boolean.class)
+                                    .chainAdd(String.class);
 
     private static final Map<Class<?>, Function<String, Object>> PARSERS =
             new ConvenientMap<>(new HashMap<Class<?>, Function<String, Object>>())
-                    .putNext(Integer.class, Integer::parseInt).putNext(Long.class, Long::parseLong)
-                    .putNext(Byte.class, Byte::parseByte).putNext(
+                    .chainPut(Integer.class, Integer::parseInt).chainPut(Long.class, Long::parseLong)
+                    .chainPut(Byte.class, Byte::parseByte).chainPut(
                     Boolean.class, str -> {
                         Utility.checkNotNull(str, "String to parse");
                         if (str.matches("(?i)true|false")) {
@@ -51,8 +52,8 @@ final class DBTableProvider implements AutoCloseableProvider {
                         } else {
                             throw new ColumnFormatException("Expected 'true' or 'false' as boolean");
                         }
-                    }).putNext(Double.class, Double::parseDouble).putNext(Float.class, Float::parseFloat)
-                    .putNext(
+                    }).chainPut(Double.class, Double::parseDouble).chainPut(Float.class, Float::parseFloat)
+                    .chainPut(
                             String.class, str -> {
                                 if (!str.startsWith(QUOTE_CHARACTER + "") || !str
                                         .endsWith(QUOTE_CHARACTER + "")) {
@@ -92,6 +93,12 @@ final class DBTableProvider implements AutoCloseableProvider {
         this.tables = new HashMap<>();
         this.corruptTables = new HashMap<>();
         reloadAllTables();
+    }
+
+    public Path getDatabaseRoot() {
+        try (UseLock useLock = validityController.use()) {
+            return databaseRoot;
+        }
     }
 
     @Override
@@ -428,9 +435,21 @@ final class DBTableProvider implements AutoCloseableProvider {
                 tables.values().stream().filter(table -> table != null).forEach(AutoCloseableTable::close);
                 tables.clear();
                 corruptTables.clear();
+
+                // Deleting empty files and empty folders.
+                try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(databaseRoot)) {
+                    for (Path tableDirectory : dirStream) {
+                        Utility.removeEmptyFilesAndFolders(tableDirectory);
+                    }
+
+                    Log.log(DBTableProvider.class, "Cleaned up successfully");
+                } catch (IOException exc) {
+                    Log.log(DBTableProvider.class, exc, "Failed to clean up");
+                }
             } finally {
                 persistenceLock.writeLock().unlock();
             }
+
             factory.onProviderClosed(this);
         } finally {
             tableClosedByMe = false;

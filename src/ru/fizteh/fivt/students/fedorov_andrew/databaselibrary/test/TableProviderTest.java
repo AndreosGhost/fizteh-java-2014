@@ -64,9 +64,6 @@ public class TableProviderTest extends TestBase {
 
     @Before
     public void prepareProvider() throws Exception {
-        if (provider != null && provider instanceof AutoCloseable) {
-            ((AutoCloseable) provider).close();
-        }
         provider = factory.create(DB_ROOT.toString());
     }
 
@@ -187,17 +184,6 @@ public class TableProviderTest extends TestBase {
     }
 
     @Test
-    public void testDeserialize1() throws IOException, ParseException {
-        Table table = createTable(Long.class, Byte.class, String.class);
-        exception.expect(ParseException.class);
-        exception.expectMessage(
-                wrongTypeMatcherAndAllOf(
-                        containsString("Empty elements are not allowed in json")));
-
-        provider.deserialize(table, "[,,]");
-    }
-
-    @Test
     public void testDeserialize2() throws IOException, ParseException {
         Table table = createTable(Long.class, Byte.class, String.class);
         exception.expect(ParseException.class);
@@ -297,6 +283,8 @@ public class TableProviderTest extends TestBase {
     public void testObtainTableWithExtraFile() throws Exception {
         String tableName = "table";
 
+        cleanupProvider();
+
         Files.createDirectories(DB_ROOT.resolve(tableName).resolve("1.dir"));
         Files.createFile(DB_ROOT.resolve(tableName).resolve("1.dir").resolve("file.txt"));
 
@@ -322,6 +310,8 @@ public class TableProviderTest extends TestBase {
     @Test
     public void testObtainTableWithBadIDOfPartFile() throws Exception {
         String tableName = "table";
+
+        cleanupProvider();
 
         Files.createDirectories(DB_ROOT.resolve(tableName).resolve("1.dir"));
         Files.createFile(DB_ROOT.resolve(tableName).resolve("1.dir").resolve("10000.dat"));
@@ -464,7 +454,9 @@ public class TableProviderTest extends TestBase {
     public void testObtainTableWithEmptySignatureFile() throws Exception {
         String tableName = "table";
 
-        Files.createDirectory(DB_ROOT.resolve(tableName));
+        cleanupProvider();
+
+        Files.createDirectories(DB_ROOT.resolve(tableName));
         Files.createFile(DB_ROOT.resolve(tableName).resolve("signature.tsv"));
 
         prepareProvider();

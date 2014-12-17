@@ -325,15 +325,10 @@ public final class StringTableImpl {
     public int rollback() {
         int diffsCount = 0;
 
-        persistenceLock.readLock().lock();
-        try {
-            for (TablePart part : tableParts.values()) {
-                diffsCount += part.rollback();
-            }
-
-        } finally {
-            persistenceLock.readLock().unlock();
+        for (TablePart part : tableParts.values()) {
+            diffsCount += part.rollback();
         }
+
         return diffsCount;
     }
 
@@ -366,7 +361,7 @@ public final class StringTableImpl {
     }
 
     /**
-     * Gets {@link TablePart} instance assigned to
+     * Gets {@link ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.TablePart} instance assigned to
      * this {@code hash} from memory. Not thread-safe.
      * @param key
      *         key that is hold by desired table.

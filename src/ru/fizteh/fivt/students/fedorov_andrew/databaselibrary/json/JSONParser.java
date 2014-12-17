@@ -3,7 +3,6 @@ package ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.json;
 import java.text.ParseException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -38,7 +37,8 @@ public final class JSONParser {
             switch (s.charAt(index)) {
             case QUOTES: {
                 // True quotes.
-                if (noEscape || (index > begin && s.charAt(index - 1) != ESCAPE_SYMBOL)) {
+                //                if (noEscape || (index > begin && s.charAt(index - 1) != ESCAPE_SYMBOL)) {
+                if (noEscape) {
                     tokens.add(new Token(TokenType.QUOTES, index, level));
                     inQuotes = !inQuotes;
                 } else {
@@ -162,8 +162,10 @@ public final class JSONParser {
      * @return constructed object. Cannot be null.
      * @throws java.text.ParseException
      */
-    public static JSONParsedObject parseJSON(String json) throws ParseException {
+    public static JSONParsedObject parseJSON(final String json) throws ParseException {
         ArrayList<Token> tokens = new ArrayList<>(findTokens(json, 0, json.length()));
+        //        System.err.println(Arrays.toString(tokens.toArray()));
+
         ArrayDeque<ParsingObject> dq = new ArrayDeque<>();
 
         List<Integer> rootElementSeparators = getElementSeparators(tokens, 0);
@@ -214,7 +216,8 @@ public final class JSONParser {
              */
             String key = null;
 
-            if (!currentlyParsingObject.object.isStandardArray()) {
+            // If object is not array and not empty -> there must be name!
+            if (!currentlyParsingObject.object.isStandardArray() && dataStartTokenID + 1 < dataEndTokenID) {
                 valueOffset = 4;
                 int nameOpeningQuotesID = dataStartTokenID + 1;
                 int nameClosingQuotesID = nameOpeningQuotesID + 1;
@@ -262,10 +265,13 @@ public final class JSONParser {
 
                 Object value;
                 String valueString = json.substring(valueStartIndex, valueEndIndex).trim().toLowerCase();
+                boolean doPut = true;
 
                 switch (valueString) {
                 case "": {
-                    throw new ParseException("Empty elements are not allowed in json", -1);
+                    doPut = false;
+                    value = null;
+                    break;
                 }
                 case NULL: {
                     value = null;
@@ -289,7 +295,9 @@ public final class JSONParser {
                 }
                 }
 
-                currentlyParsingObject.putSafely(key, value);
+                if (doPut) {
+                    currentlyParsingObject.putSafely(key, value);
+                }
             } else if (valueStartToken.type == TokenType.QUOTES && valueEndToken.type == TokenType.QUOTES) {
                 // Quotes. Expected type of value: string.
                 if (valueStartTokenID + 1 != valueEndTokenID) {
@@ -441,10 +449,10 @@ public final class JSONParser {
     @JSONComplexObject(wrapper = true)
     private static class ArrayObject implements JSONParsedObject {
         @JSONField
-        private final Object[] array;
+        private final List<Object> array;
 
         public ArrayObject(int length) {
-            this.array = new Object[length];
+            this.array = new ArrayList<>(length);
         }
 
         @Override
@@ -454,7 +462,14 @@ public final class JSONParser {
 
         @Override
         public void put(int index, Object value) throws UnsupportedOperationException {
-            array[index] = value;
+            if (index == array.size()) {
+                array.add(value);
+            } else if (index < array.size()) {
+                array.set(index, value);
+            } else {
+                throw new IndexOutOfBoundsException(
+                        "Index too big: " + index + ", expected (max): " + array.size());
+            }
         }
 
         @Override
@@ -464,7 +479,7 @@ public final class JSONParser {
 
         @Override
         public Object get(int index) {
-            return array[index];
+            return array.get(index);
         }
 
         @Override
@@ -484,12 +499,12 @@ public final class JSONParser {
 
         @Override
         public int size() {
-            return array.length;
+            return array.size();
         }
 
         @Override
         public String toString() {
-            return Arrays.toString(array);
+            return array.stream().reduce((a, b) -> a.toString() + "," + b.toString()).get().toString();
         }
 
         @Override
@@ -499,7 +514,7 @@ public final class JSONParser {
 
         @Override
         public Object[] asArray() {
-            return array;
+            return array.toArray();
         }
     }
 

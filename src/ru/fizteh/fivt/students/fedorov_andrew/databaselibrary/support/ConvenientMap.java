@@ -9,7 +9,7 @@ import java.util.function.Function;
 
 /**
  * Usual map extended with method {@link ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support
- * .ConvenientMap#putNext(Object,
+ * .ConvenientMap#chainPut(Object,
  * Object)}.
  */
 public class ConvenientMap<K, V> implements Map<K, V> {
@@ -19,7 +19,7 @@ public class ConvenientMap<K, V> implements Map<K, V> {
         this.baseMap = baseMap;
     }
 
-    public ConvenientMap<K, V> putNext(K key, V value) {
+    public ConvenientMap<K, V> chainPut(K key, V value) {
         baseMap.put(key, value);
         return this;
     }
