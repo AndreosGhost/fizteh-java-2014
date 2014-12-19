@@ -3,7 +3,7 @@ package ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db;
 import ru.fizteh.fivt.proxy.LoggingProxyFactory;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.DatabaseIOException;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.Log;
-import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.LoggingProxyFactoryJSON;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.LoggingProxyFactoryXML;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.Utility;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.ValidityController;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.ValidityController.KillLock;
@@ -20,7 +20,7 @@ import java.nio.file.Paths;
 import java.util.IdentityHashMap;
 
 public final class DBTableProviderFactory implements AutoCloseableTableProviderFactory {
-    private static final LoggingProxyFactory LOGGING_PROXY_FACTORY = new LoggingProxyFactoryJSON();
+    private static final LoggingProxyFactory LOGGING_PROXY_FACTORY = new LoggingProxyFactoryXML();
     private static final Writer LOG_WRITER;
 
     static {
