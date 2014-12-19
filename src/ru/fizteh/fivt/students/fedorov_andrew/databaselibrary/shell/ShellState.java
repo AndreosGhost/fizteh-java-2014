@@ -33,12 +33,6 @@ public interface ShellState<S extends ShellState<S>> extends CommandContainer<S>
     void init(Shell<S> host) throws Exception;
 
     /**
-     * Persist object's state somehow.
-     * @throws Exception
-     */
-    void persist() throws Exception;
-
-    /**
      * Safely exit with cleanup.
      * @throws ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.ExitRequest
      *         you must throw this exception to indicate that you really want to exit. Do no call

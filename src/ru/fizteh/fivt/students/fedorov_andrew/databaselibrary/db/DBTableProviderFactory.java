@@ -1,7 +1,6 @@
 package ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db;
 
 import ru.fizteh.fivt.proxy.LoggingProxyFactory;
-import ru.fizteh.fivt.storage.structured.TableProviderFactory;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.DatabaseIOException;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.Log;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.LoggingProxyFactoryJSON;
@@ -20,7 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.IdentityHashMap;
 
-public final class DBTableProviderFactory implements TableProviderFactory, AutoCloseable {
+public final class DBTableProviderFactory implements AutoCloseableTableProviderFactory {
     private static final LoggingProxyFactory LOGGING_PROXY_FACTORY = new LoggingProxyFactoryJSON();
     private static final Writer LOG_WRITER;
 
@@ -55,9 +54,7 @@ public final class DBTableProviderFactory implements TableProviderFactory, AutoC
     public synchronized void close() {
         try (KillLock lock = validityController.useAndKill()) {
             providerClosedByMe = true;
-            for (AutoCloseableProvider provider : generatedProviders.keySet()) {
-                provider.close();
-            }
+            generatedProviders.keySet().forEach(AutoCloseableProvider::close);
             generatedProviders.clear();
         } finally {
             providerClosedByMe = false;

@@ -6,16 +6,17 @@ import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.Log;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.Utility;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.Reader;
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Class that represents a terminal which can execute some commands that work with some data.
@@ -40,14 +41,13 @@ public class Shell<ShellStateImpl extends ShellState<ShellStateImpl>> {
     private final ShellStateImpl shellState;
     private final PrintStream outputStream;
     private boolean valid = true;
-    /**
-     * Available commands for invocation.
-     */
-    private Map<String, Command<ShellStateImpl>> commandMap;
+
     /**
      * If the user is entering commands or it is package mode.
      */
     private boolean interactive;
+
+    private Reader inputStreamReader;
 
     public Shell(ShellStateImpl shellState, OutputStream outputStream) throws TerminalException {
         this.shellState = shellState;
@@ -78,7 +78,7 @@ public class Shell<ShellStateImpl extends ShellState<ShellStateImpl>> {
         if (reportToUser) {
             errorStream.println(message == null ? cause.getMessage() : message);
         }
-        Log.log(Commands.class, cause, message);
+        Log.log(SingleDBCommands.class, cause, message);
         if (cause == null) {
             throw new TerminalException(message);
         } else {
@@ -152,7 +152,7 @@ public class Shell<ShellStateImpl extends ShellState<ShellStateImpl>> {
 
         Log.log(Shell.class, "Invocation request: " + Arrays.toString(args));
 
-        Command<ShellStateImpl> command = commandMap.get(args[0]);
+        Command<ShellStateImpl> command = shellState.getCommands().get(args[0]);
         if (command == null) {
             handleError(args[0] + ": command is missing", null, true, getOutputStream());
         } else {
@@ -178,8 +178,6 @@ public class Shell<ShellStateImpl extends ShellState<ShellStateImpl>> {
         } catch (Exception exc) {
             handleError(exc.getMessage(), exc, true, getOutputStream());
         }
-
-        commandMap = shellState.getCommands();
     }
 
     public boolean isInteractive() {
@@ -192,14 +190,20 @@ public class Shell<ShellStateImpl extends ShellState<ShellStateImpl>> {
         }
     }
 
+    public Reader getInputStreamReader() {
+        if (inputStreamReader == null) {
+            throw new IllegalStateException("No reader now");
+        }
+        return inputStreamReader;
+    }
+
     /**
      * Execute commands from input stream. Commands are awaited till the-end-of-stream.
      */
-    public int run(InputStream stream) throws TerminalException {
+    private int run(InputStream stream, boolean interactive) throws TerminalException {
         checkValid();
         valid = false;
-
-        interactive = true;
+        this.interactive = interactive;
 
         if (stream == null) {
             throw new IllegalArgumentException("Input stream must not be null");
@@ -209,8 +213,11 @@ public class Shell<ShellStateImpl extends ShellState<ShellStateImpl>> {
 
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(stream), READ_BUFFER_SIZE)) {
+            inputStreamReader = reader;
             while (true) {
-                outputStream.print(shellState.getGreetingString());
+                if (interactive) {
+                    outputStream.print(shellState.getGreetingString());
+                }
                 String str = reader.readLine();
 
                 // End of stream.
@@ -225,6 +232,9 @@ public class Shell<ShellStateImpl extends ShellState<ShellStateImpl>> {
                     }
                 } catch (TerminalException exc) {
                     // Exception is already handled.
+                    if (!interactive) {
+                        shellState.prepareToExit(1);
+                    }
                 }
             }
         } catch (IOException | ParseException exc) {
@@ -235,9 +245,10 @@ public class Shell<ShellStateImpl extends ShellState<ShellStateImpl>> {
             exitRequested = true;
             return request.getCode();
         } finally {
+            inputStreamReader = null;
             if (!exitRequested) {
                 try {
-                    persistSafelyAndPrepareToExit();
+                    shellState.prepareToExit(0);
                 } catch (ExitRequest request) {
                     return request.getCode();
                 }
@@ -246,6 +257,10 @@ public class Shell<ShellStateImpl extends ShellState<ShellStateImpl>> {
 
         // If all contracts are honoured, this line is unreachable.
         throw new AssertionError("No exit request performed");
+    }
+
+    public int run(InputStream inputStream) throws TerminalException {
+        return run(inputStream, true);
     }
 
     /**
@@ -258,49 +273,7 @@ public class Shell<ShellStateImpl extends ShellState<ShellStateImpl>> {
      * @return Exit code. 0 means normal status, anything else - abnormal termination (error).
      */
     public int run(String[] args) throws TerminalException {
-        checkValid();
-        valid = false;
-
-        try {
-            interactive = false;
-
-            try {
-                List<String[]> commands = splitCommandsString(String.join(" ", args));
-
-                for (String[] command : commands) {
-                    execute(command);
-                }
-            } catch (TerminalException exc) {
-                // Exception already handled.
-                shellState.prepareToExit(1);
-            } catch (ParseException exc) {
-                handleError(
-                        "Cannot parse command arguments: " + exc.getMessage(), exc, true, getOutputStream());
-            }
-            persistSafelyAndPrepareToExit();
-        } catch (ExitRequest request) {
-            return request.getCode();
-        }
-
-        // If all contracts are honoured, this line is unreachable.
-        throw new AssertionError("No exit request performed");
-    }
-
-    /**
-     * Persists shell state. If fails, calls {@link ru.fizteh.fivt.students.fedorov_andrew
-     * .databaselibrary.shell.ShellState#prepareToExit(int)}
-     * with non zero exit code.
-     */
-    private void persistSafelyAndPrepareToExit() throws ExitRequest {
-        try {
-            shellState.persist();
-            shellState.prepareToExit(0);
-        } catch (ExitRequest request) {
-            throw request;
-        } catch (Exception exc) {
-            Log.log(Shell.class, exc, "Failed to persist shell state");
-            shellState.prepareToExit(1);
-        }
+        return run(new ByteArrayInputStream(String.join(" ", args).getBytes()), false);
     }
 
     public boolean isValid() {

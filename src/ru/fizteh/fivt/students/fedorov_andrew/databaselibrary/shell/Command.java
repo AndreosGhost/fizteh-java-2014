@@ -10,6 +10,11 @@ public interface Command<State extends ShellState<State>> {
     void execute(State state, String[] args) throws TerminalException;
 
     /**
+     * Name this command can be invoked by.
+     */
+    String getName();
+
+    /**
      * Information text for the command.
      */
     String getInfo();
@@ -19,8 +24,8 @@ public interface Command<State extends ShellState<State>> {
      */
     String getInvocation();
 
-    default String buildHelpLine(String commandName) {
+    default String buildHelpLine() {
         return String.format(
-                "\t%s%s\t%s", commandName, getInvocation() == null ? "" : (' ' + getInvocation()), getInfo());
+                "\t%s%s\t%s", getName(), getInvocation() == null ? "" : (' ' + getInvocation()), getInfo());
     }
 }

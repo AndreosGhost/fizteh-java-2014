@@ -102,12 +102,14 @@ public class XMLMaker {
 
                     if (annotatedFields.isEmpty()) {
                         throw new IllegalArgumentException(
-                                "Class " + objClass.getSimpleName()
+                                "Class "
+                                + objClass.getSimpleName()
                                 + " does not have any XML fields and cannot be serialized");
                     } else if (objClass.getAnnotation(XMLComplexObject.class).wrapper()) {
                         if (annotatedFields.size() != 1) {
                             throw new IllegalArgumentException(
-                                    "Class " + objClass.getSimpleName()
+                                    "Class "
+                                    + objClass.getSimpleName()
                                     + " has more then one XML fields, thus it cannot be annotated as "
                                     + "'wrapper'");
                         }

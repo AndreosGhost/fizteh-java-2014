@@ -43,20 +43,10 @@ public class AlternativeShellState extends SimpleCommandContainer<AlternativeShe
 
     private final Map<String, Command<AlternativeShellState>> commandMap;
 
-    private boolean makeExceptionOnPersist;
     private boolean makeExceptionOnInit;
-    private boolean makeRuntimeExceptionOnCleanup;
 
     public AlternativeShellState() {
         commandMap = super.getCommands();
-    }
-
-    public boolean isMakeExceptionOnPersist() {
-        return makeExceptionOnPersist;
-    }
-
-    public void setMakeExceptionOnPersist(boolean makeExceptionOnPersist) {
-        this.makeExceptionOnPersist = makeExceptionOnPersist;
     }
 
     public boolean isMakeExceptionOnInit() {
@@ -74,9 +64,7 @@ public class AlternativeShellState extends SimpleCommandContainer<AlternativeShe
 
     @Override
     public void cleanup() {
-        if (makeRuntimeExceptionOnCleanup) {
-            throw new SpontaniousRuntimeException();
-        }
+
     }
 
     @Override
@@ -92,23 +80,8 @@ public class AlternativeShellState extends SimpleCommandContainer<AlternativeShe
     }
 
     @Override
-    public void persist() throws Exception {
-        if (makeExceptionOnPersist) {
-            throw new SpontaniousException();
-        }
-    }
-
-    @Override
     public void prepareToExit(int exitCode) throws ExitRequest {
         throw new ExitRequest(exitCode);
-    }
-
-    public boolean isMakeRuntimeExceptionOnCleanup() {
-        return makeRuntimeExceptionOnCleanup;
-    }
-
-    public void setMakeRuntimeExceptionOnCleanup(boolean makeRuntimeExceptionOnCleanup) {
-        this.makeRuntimeExceptionOnCleanup = makeRuntimeExceptionOnCleanup;
     }
 
     @Override

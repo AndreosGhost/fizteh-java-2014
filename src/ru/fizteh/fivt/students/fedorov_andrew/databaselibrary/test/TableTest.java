@@ -294,7 +294,9 @@ public class TableTest extends TestBase {
                         Consumer<Integer> trashFiller = (actionsCount) -> {
                             try {
                                 System.err.println(
-                                        Thread.currentThread().getName() + ": doing " + actionsCount
+                                        Thread.currentThread().getName()
+                                        + ": doing "
+                                        + actionsCount
                                         + " actions");
                                 for (int j = 0; j < actionsCount; j++) {
                                     put(

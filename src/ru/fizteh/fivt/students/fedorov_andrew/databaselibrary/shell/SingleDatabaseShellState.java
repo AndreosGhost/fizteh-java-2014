@@ -7,7 +7,6 @@ import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.ExitRequ
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.NoActiveTableException;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.Log;
 
-import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Map;
 
@@ -23,7 +22,7 @@ public abstract class SingleDatabaseShellState extends BaseShellState<SingleData
     /**
      * Our proxy command container.
      */
-    private static final Commands COMMANDS_CONTAINER = Commands.obtainInstance();
+    private static final SingleDBCommands COMMANDS_CONTAINER = SingleDBCommands.getInstance();
 
     /**
      * Database that user works with via terminal.
@@ -32,6 +31,7 @@ public abstract class SingleDatabaseShellState extends BaseShellState<SingleData
 
     @Override
     public PrintStream getOutputStream() {
+        checkInitialized();
         return host.getOutputStream();
     }
 
@@ -64,11 +64,6 @@ public abstract class SingleDatabaseShellState extends BaseShellState<SingleData
     }
 
     @Override
-    public void persist() throws IOException {
-        getActiveDatabase().commit();
-    }
-
-    @Override
     public void prepareToExit(int exitCode) throws ExitRequest {
         Log.log(SingleDatabaseShellState.class, "Preparing to exit with code " + exitCode);
         cleanup();
@@ -80,6 +75,7 @@ public abstract class SingleDatabaseShellState extends BaseShellState<SingleData
      * Returns database user works with.
      */
     public Database getActiveDatabase() {
+        checkInitialized();
         return activeDatabase;
     }
 

@@ -36,4 +36,9 @@ public abstract class BaseShellState<State extends ShellState<State>> implements
         this.host = host;
     }
 
+    @Override
+    protected void finalize() throws Throwable {
+        super.finalize();
+        cleanup();
+    }
 }

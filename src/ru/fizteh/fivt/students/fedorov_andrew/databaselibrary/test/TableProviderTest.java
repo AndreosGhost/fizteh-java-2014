@@ -490,7 +490,9 @@ public class TableProviderTest extends TestBase {
         exception.expectMessage(
                 wrongTypeMatcherAndAllOf(
                         containsString(
-                                "Column #0 expected to have type " + INT_TYPE + ", but actual type is "
+                                "Column #0 expected to have type "
+                                + INT_TYPE
+                                + ", but actual type is "
                                 + LONG_TYPE)));
 
         tableA.put("key", storeableB);

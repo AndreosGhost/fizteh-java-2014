@@ -42,20 +42,12 @@ public class DatabaseShellTest extends InterpreterTestBase<SingleDatabaseShellSt
     }
 
     @Test
-    public void testFailPersistOnExit() throws TerminalException, DatabaseIOException {
-        MutatedSDSS state = new MutatedSDSS(0);
-        interpreter = new Shell<>(state);
-
-        runBatchExpectNonZero("exit");
-        assertEquals(
-                "Failing on persist() call",
-                makeTerminalExpectedMessage("Fail on commit [test mode]"),
-                getOutput());
-    }
-
-    @Test
     public void testPutCompositeStoreable() throws TerminalException {
-        runBatchExpectZero("create t1 (String  int boolean)", "use t1", "put key [ \"hello\", 2, null ]");
+        runBatchExpectZero(
+                "create t1 (String  int boolean)",
+                "use t1",
+                "put key [ \"hello\", 2, null ]",
+                "commit");
 
         assertThat("Output after put", getOutput(), containsString(makeTerminalExpectedMessage("new")));
 
@@ -98,7 +90,8 @@ public class DatabaseShellTest extends InterpreterTestBase<SingleDatabaseShellSt
         createTableWithStringColumn(tableA);
 
         String command = String.format(
-                "use " + tableA
+                "use "
+                + tableA
                 + "; put a [\"b\"]; put b [\"c\"]; put c [\"d\"]; remove b; put a [\"bbb\"]; use %s", tableB);
         String expectedReply = String.format(
                 "using tableA%nnew%nnew%nnew%nremoved%noverwrite%nold [\"b\"]%n2 unsaved changes%n");
@@ -229,7 +222,7 @@ public class DatabaseShellTest extends InterpreterTestBase<SingleDatabaseShellSt
 
         runBatchExpectZero(
                 "use " + table,
-                "put a [\"b\"]; put b [\"c\"]; put c [\"d\"]; put d [\"e\"]; put e [\"a\"];",
+                "put a [\"b\"]; put b [\"c\"]; put c [\"d\"]; put d [\"e\"]; put e [\"a\"]; commit",
                 "exit");
         runInteractiveExpectZero(
                 "use " + table, "show tables", "use " + fakeTable + "; list", "use " + table + "; list");
@@ -276,7 +269,8 @@ public class DatabaseShellTest extends InterpreterTestBase<SingleDatabaseShellSt
         createTableWithStringColumn(table);
         runBatchExpectZero(
                 "use " + table,
-                "put a [\"b\"]; put c [\"d\"]; put d [\"e\"]; remove c; put d [\"dd\"]; put k [\"a\"]");
+                "put a [\"b\"]; put c [\"d\"]; put d [\"e\"]; remove c; put d [\"dd\"]; put k [\"a\"]; "
+                + "commit");
         runBatchExpectZero("use " + table, "size");
         assertEquals(makeTerminalExpectedMessage("using " + table, "3"), getOutput());
     }
@@ -444,7 +438,7 @@ public class DatabaseShellTest extends InterpreterTestBase<SingleDatabaseShellSt
     @Test
     public void testRunWithUnparseableStream() throws TerminalException {
         exception.expect(TerminalException.class);
-        exception.expectMessage(containsString("Cannot parse command arguments"));
+        exception.expectMessage(containsString("Error in input stream: Cannot find closing quotes"));
 
         runBatchExpectNonZero("do smth \""); // Unclosed quotes.
     }
@@ -452,7 +446,8 @@ public class DatabaseShellTest extends InterpreterTestBase<SingleDatabaseShellSt
     @Test
     public void testCreateTableWithInvalidName1() throws TerminalException {
         runBatchExpectNonZero(
-                "create " + Paths.get("..", DB_ROOT.getFileName().toString(), "table").toString()
+                "create "
+                + Paths.get("..", DB_ROOT.getFileName().toString(), "table").toString()
                 + " (String)");
         assertEquals(
                 "Illegal table name error must be raised",

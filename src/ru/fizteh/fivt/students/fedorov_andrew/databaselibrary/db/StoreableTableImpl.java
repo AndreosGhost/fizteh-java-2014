@@ -143,8 +143,11 @@ public final class StoreableTableImpl implements AutoCloseableTable {
                 String msg = exc.getMessage();
                 String descriptionPart = msg.substring(msg.indexOf('('), msg.lastIndexOf(')'));
                 throw new DatabaseIOException(
-                        "wrong type (Invalid type description file for table " + store.getName() + ": "
-                        + descriptionPart + ")");
+                        "wrong type (Invalid type description file for table "
+                        + store.getName()
+                        + ": "
+                        + descriptionPart
+                        + ")");
             } else {
                 throw new TableCorruptIOException(
                         store.getName(), "Invalid type description file: " + exc.getMessage());
@@ -201,7 +204,8 @@ public final class StoreableTableImpl implements AutoCloseableTable {
         }
 
         // Optimization for checking column types.
-        if (!(storeable instanceof StoreableImpl && table instanceof StoreableTableImpl
+        if (!(storeable instanceof StoreableImpl
+              && table instanceof StoreableTableImpl
               && ((StoreableImpl) storeable).getTypes() == ((StoreableTableImpl) table).getColumnTypes())) {
             // Checking column types where possible.
             for (int column = 0, columnsCount = table.getColumnsCount(); column < columnsCount; column++) {

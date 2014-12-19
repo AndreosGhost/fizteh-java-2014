@@ -1,5 +1,7 @@
 package ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support;
 
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.InvalidatedObjectException;
+
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -12,7 +14,7 @@ public final class ValidityController {
 
     private void checkValid() {
         if (!valid) {
-            throw new IllegalStateException("This object has been invalidated: ");
+            throw new InvalidatedObjectException("This object has been invalidated: ");
         }
     }
 
@@ -33,10 +35,10 @@ public final class ValidityController {
      * Returns activated lock on the use of the object. While object is used, nobody can invalidate it
      * (except
      * the host thread of this lock).
-     * @throws IllegalStateException
+     * @throws InvalidatedObjectException
      *         if this object has been already invalidated.
      */
-    public UseLock use() throws IllegalStateException {
+    public UseLock use() throws InvalidatedObjectException {
         validityLock.readLock().lock();
         try {
             checkValid();
@@ -49,10 +51,10 @@ public final class ValidityController {
 
     /**
      * Returns activated unique lock for the use of the object. After use object is invalidated.
-     * @throws IllegalStateException
+     * @throws InvalidatedObjectException
      *         if this object has been already invalidated.
      */
-    public KillLock useAndKill() throws IllegalStateException {
+    public KillLock useAndKill() throws InvalidatedObjectException {
         validityLock.writeLock().lock();
         try {
             checkValid();

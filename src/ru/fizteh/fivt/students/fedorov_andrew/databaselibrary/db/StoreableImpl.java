@@ -6,6 +6,7 @@ import ru.fizteh.fivt.storage.structured.Table;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.json.JSONComplexObject;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.json.JSONField;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -16,7 +17,7 @@ import java.util.Objects;
  * Not bound to any table.
  */
 @JSONComplexObject(wrapper = true)
-public final class StoreableImpl implements Storeable {
+public final class StoreableImpl implements Storeable, Serializable {
     @JSONField
     private final Object[] values;
 

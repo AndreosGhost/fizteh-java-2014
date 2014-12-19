@@ -316,7 +316,9 @@ final class DBTableProvider implements AutoCloseableProvider {
 
             if (table.getColumnsCount() != values.size()) {
                 throw new IndexOutOfBoundsException(
-                        "Wrong number of values given; expected: " + table.getColumnsCount() + ", actual: "
+                        "Wrong number of values given; expected: "
+                        + table.getColumnsCount()
+                        + ", actual: "
                         + values.size());
             }
 

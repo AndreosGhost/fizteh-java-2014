@@ -48,7 +48,8 @@ public class LoggingProxyFactoryXMLTest extends LoggingProxyFactoryTestBase {
                         startsWith("<invoke timestamp=\""), endsWith(
                                 "\" class=\"TestFaceImpl\" "
                                 + "name=\"boolMethod\"><arguments><argument>1</argument><argument><null"
-                                + "/></argument></arguments><return>true</return></invoke>" + NEW_LINE)));
+                                + "/></argument></arguments><return>true</return></invoke>"
+                                + NEW_LINE)));
     }
 
     @Test
@@ -72,7 +73,8 @@ public class LoggingProxyFactoryXMLTest extends LoggingProxyFactoryTestBase {
                                 + ">1_1</value><value>1_2</value><value>1_3</value></list></value><value"
                                 + "><list><value>2_1</value><value>2_2</value></list></value><value><null"
                                 + "/></value></list></argument></arguments><thrown>java.lang"
-                                + ".Exception</thrown></invoke>" + NEW_LINE)));
+                                + ".Exception</thrown></invoke>"
+                                + NEW_LINE)));
     }
 
     @Test

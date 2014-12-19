@@ -1,14 +1,17 @@
 package ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.shell;
 
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.ExecutionNotPermittedException;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.InvocationException;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.NoActiveTableException;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.TerminalException;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.WrongArgsNumberException;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.AccurateExceptionHandler;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.Log;
 
 import java.io.IOException;
 import java.io.PrintStream;
 import java.text.ParseException;
+import java.util.Objects;
 
 import static ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.Utility.*;
 
@@ -17,14 +20,30 @@ import static ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.Uti
  * @author phoenix
  */
 public abstract class AbstractCommand<State extends ShellState<State>> implements Command<State> {
-    private static final Class<?>[] EXECUTE_SAFELY_THROWN_EXCEPTIONS =
-            obtainExceptionsThrownByExecuteSafely();
+    private static final Class<?>[] EXECUTE_SAFELY_THROWN_EXCEPTIONS;
+
+    static {
+        Class<?>[] exceptions = null;
+
+        try {
+            exceptions = AbstractCommand.class.getDeclaredMethod(
+                    "executeSafely", ShellState.class, String[].class).getExceptionTypes();
+        } catch (Exception exc) {
+            Log.log(AbstractCommand.class, exc, "Failed to obtain exceptions thrown by executeSafely");
+            throw new RuntimeException(
+                    "Failed to obtain exceptions thrown by executeSafely: " + exc.getMessage(),
+                    exc.getCause());
+        } finally {
+            EXECUTE_SAFELY_THROWN_EXCEPTIONS = exceptions;
+        }
+    }
+
     /**
      * Used for unsafe calls. Catches and handles all exceptions thrown by {@link
      * AbstractCommand#executeSafely
      * (SingleDatabaseShellState, String[]) } and {@link IllegalArgumentException }.
      */
-    static final AccurateExceptionHandler<PrintStream> DATABASE_ERROR_HANDLER =
+    public static final AccurateExceptionHandler<PrintStream> DATABASE_ERROR_HANDLER =
             (Exception exc, PrintStream ps) -> {
                 boolean found = false;
                 Class<?> actualType = exc.getClass();
@@ -47,6 +66,8 @@ public abstract class AbstractCommand<State extends ShellState<State>> implement
                     throw new RuntimeException("Unexpected exception", exc);
                 }
             };
+
+    private final String name;
     private final String info;
     private final String invocationArgs;
     private final int minimalArgsCount;
@@ -58,27 +79,30 @@ public abstract class AbstractCommand<State extends ShellState<State>> implement
      * @param info
      *         Short description of command.
      */
-    public AbstractCommand(String invocationArgs, String info, int minimalArgsCount, int maximalArgsCount) {
+    public AbstractCommand(String name,
+                           String invocationArgs,
+                           String info,
+                           int minimalArgsCount,
+                           int maximalArgsCount) {
+        Objects.requireNonNull(name, "Name must not be null");
+
+        this.name = name;
         this.info = info;
         this.invocationArgs = invocationArgs;
         this.minimalArgsCount = minimalArgsCount;
         this.maximalArgsCount = maximalArgsCount;
     }
 
-    public AbstractCommand(String invocationArgs, String info, int expectedArgsCount) {
-        this(invocationArgs, info, expectedArgsCount, expectedArgsCount);
+    public AbstractCommand(String name, String invocationArgs, String info, int expectedArgsCount) {
+        this(name, invocationArgs, info, expectedArgsCount, expectedArgsCount);
     }
 
-    private static Class<?>[] obtainExceptionsThrownByExecuteSafely() {
-        Class<?>[] exceptions;
+    public int getMinimalArgsCount() {
+        return minimalArgsCount;
+    }
 
-        try {
-            exceptions = AbstractCommand.class.getMethod("executeSafely", ShellState.class, String[].class)
-                                              .getExceptionTypes();
-        } catch (Exception exc) {
-            throw new RuntimeException("Failed to obtain exceptions thrown by executeSafely");
-        }
-        return exceptions;
+    public int getMaximalArgsCount() {
+        return maximalArgsCount;
     }
 
     /**
@@ -99,6 +123,11 @@ public abstract class AbstractCommand<State extends ShellState<State>> implement
     }
 
     @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
     public String getInfo() {
         return info;
     }
@@ -108,14 +137,15 @@ public abstract class AbstractCommand<State extends ShellState<State>> implement
         return invocationArgs;
     }
 
-    public abstract void executeSafely(State state, String[] args) throws
-                                                                   IllegalArgumentException,
-                                                                   NoActiveTableException,
-                                                                   IllegalStateException,
-                                                                   NullPointerException,
-                                                                   InvocationException,
-                                                                   ParseException,
-                                                                   IOException;
+    protected abstract void executeSafely(State state, String[] args) throws
+                                                                      IllegalArgumentException,
+                                                                      NoActiveTableException,
+                                                                      IllegalStateException,
+                                                                      NullPointerException,
+                                                                      InvocationException,
+                                                                      ParseException,
+                                                                      IOException,
+                                                                      ExecutionNotPermittedException;
 
     void checkArgsNumber(String[] args, int minimal, int maximal) throws WrongArgsNumberException {
         if (args.length < minimal || args.length > maximal) {

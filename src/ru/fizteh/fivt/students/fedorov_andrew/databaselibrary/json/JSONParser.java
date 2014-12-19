@@ -230,8 +230,13 @@ public final class JSONParser {
                 if (nameOpeningQuotes.type != TokenType.QUOTES
                     || nameClosingQuotes.type != TokenType.QUOTES) {
                     throw new ParseException(
-                            "Quotes are expected in positions " + nameOpeningQuotes.index + ", "
-                            + nameClosingQuotes.index + ", but found " + nameOpeningQuotes.type + " and "
+                            "Quotes are expected in positions "
+                            + nameOpeningQuotes.index
+                            + ", "
+                            + nameClosingQuotes.index
+                            + ", but found "
+                            + nameOpeningQuotes.type
+                            + " and "
                             + nameClosingQuotes.type, nameOpeningQuotes.index);
                 }
 
@@ -303,8 +308,12 @@ public final class JSONParser {
                 if (valueStartTokenID + 1 != valueEndTokenID) {
                     Token extraToken = tokens.get(valueStartTokenID + 1);
                     throw new ParseException(
-                            "Extra token between positions " + valueStartToken.index + " and "
-                            + valueEndToken.index + ": " + extraToken.type, extraToken.index);
+                            "Extra token between positions "
+                            + valueStartToken.index
+                            + " and "
+                            + valueEndToken.index
+                            + ": "
+                            + extraToken.type, extraToken.index);
                 }
                 int valueStart = tokens.get(valueStartTokenID).index + 1;
                 int valueEnd = tokens.get(valueEndTokenID).index;

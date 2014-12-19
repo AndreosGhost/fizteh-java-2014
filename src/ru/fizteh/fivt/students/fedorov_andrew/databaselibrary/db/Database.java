@@ -3,6 +3,7 @@ package ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db;
 import ru.fizteh.fivt.storage.structured.Table;
 import ru.fizteh.fivt.storage.structured.TableProvider;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.DatabaseIOException;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.InvalidatedObjectException;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.NoActiveTableException;
 
 import java.io.IOException;
@@ -127,27 +128,32 @@ public class Database {
      *         Name of table to use.
      */
     public void useTable(String tableName) throws IOException, IllegalArgumentException {
-        if (activeTable != null) {
-            if (tableName.equals(activeTable.getName())) {
-                return;
-            }
-
-            int uncommitted = activeTable.getNumberOfUncommittedChanges();
-            if (uncommitted != 0) {
-                throw new DatabaseIOException(String.format("%d unsaved changes", uncommitted));
-            }
-        }
-
-        Table oldActiveTable = activeTable;
-
         try {
-            activeTable = provider.getTable(tableName);
-            if (activeTable == null) {
-                throw new IllegalArgumentException(tableName + " not exists");
+            if (activeTable != null) {
+                if (tableName.equals(activeTable.getName())) {
+                    return;
+                }
+
+                int uncommitted = activeTable.getNumberOfUncommittedChanges();
+                if (uncommitted != 0) {
+                    throw new DatabaseIOException(String.format("%d unsaved changes", uncommitted));
+                }
             }
-        } catch (Exception exc) {
-            activeTable = oldActiveTable;
-            throw exc;
+
+            Table oldActiveTable = activeTable;
+
+            try {
+                activeTable = provider.getTable(tableName);
+                if (activeTable == null) {
+                    throw new IllegalArgumentException(tableName + " not exists");
+                }
+            } catch (Exception exc) {
+                activeTable = oldActiveTable;
+                throw exc;
+            }
+        } catch (InvalidatedObjectException exc) {
+            activeTable = null;
+            useTable(tableName);
         }
     }
 }

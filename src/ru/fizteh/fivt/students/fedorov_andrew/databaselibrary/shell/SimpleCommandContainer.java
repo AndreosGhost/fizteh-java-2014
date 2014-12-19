@@ -1,7 +1,6 @@
 package ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.shell;
 
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.Log;
-import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.Utility;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
@@ -31,7 +30,10 @@ public class SimpleCommandContainer<State extends ShellState<State>> implements 
         for (Field field : fields) {
             try {
                 Command<State> command = (Command<State>) field.get(null);
-                String commandName = Utility.simplifyFieldName(field.getName());
+                String commandName = command.getName();
+                if (commandsMap.containsKey(commandName)) {
+                    throw new IllegalStateException("Duplicate command name: " + commandName);
+                }
                 commandsMap.put(commandName, command);
                 Log.log("Registered command with name " + commandName);
             } catch (IllegalAccessException | ClassCastException exc) {
