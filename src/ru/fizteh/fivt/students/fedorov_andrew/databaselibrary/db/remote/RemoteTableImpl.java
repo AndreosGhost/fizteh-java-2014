@@ -20,6 +20,10 @@ class RemoteTableImpl extends UnicastRemoteObject implements IRemoteTable {
         this.table = table;
     }
 
+    public Table getPureTable() {
+        return table;
+    }
+
     @Override
     public String getName() throws RemoteException {
         return table.getName();

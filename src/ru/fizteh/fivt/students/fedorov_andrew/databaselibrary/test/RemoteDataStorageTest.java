@@ -8,6 +8,7 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import ru.fizteh.fivt.storage.structured.RemoteTableProvider;
+import ru.fizteh.fivt.storage.structured.Storeable;
 import ru.fizteh.fivt.storage.structured.Table;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.remote.RemoteDatabaseStorage;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.remote.RemoteTableProviderFactoryImpl;
@@ -135,5 +136,40 @@ public class RemoteDataStorageTest extends TestBase {
 
         exception.expect(InvalidatedObjectException.class);
         remoteTable.getName();
+    }
+
+    @Test
+    public void testTwoCreatesOfTheSameTable() throws IOException {
+        RemoteDatabaseStorage storage = new RemoteDatabaseStorage();
+        RemoteTableProvider providerA = storage.connect("localhost", Registry.REGISTRY_PORT);
+        RemoteTableProvider providerB = storage.connect("localhost", Registry.REGISTRY_PORT);
+
+        String tableName = "table";
+
+        Table remoteTableA = providerA.createTable(tableName, Arrays.asList(String.class));
+        Table remoteTableB = providerB.createTable(tableName, Arrays.asList(String.class));
+
+        assertNull(remoteTableB);
+    }
+
+    @Test
+    public void testPutValue() throws IOException {
+        RemoteDatabaseStorage storage = new RemoteDatabaseStorage();
+        RemoteTableProvider providerA = storage.connect("localhost", Registry.REGISTRY_PORT);
+        RemoteTableProvider providerB = storage.connect("localhost", Registry.REGISTRY_PORT);
+
+        String tableName = "table";
+        String key = "key";
+        String value = "value";
+
+        providerA.createTable(tableName, Arrays.asList(String.class));
+
+        Table tableFromA = providerA.getTable(tableName);
+        Table tableFromB = providerB.getTable(tableName);
+
+        tableFromA.put(key, providerA.createFor(tableFromA, Arrays.asList(value)));
+        Storeable storeable = tableFromB.get(key);
+
+        assertEquals(value, storeable.getStringAt(0));
     }
 }

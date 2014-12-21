@@ -17,7 +17,9 @@ class Main {
     public static void main(String[] args) {
         try {
             Shell<ClientServerGeneralState> shell = new Shell<>(
-                    new ClientServerGeneralState() {
+                    new ClientServerGeneralState(
+                            System.getProperty(
+                                    SingleDatabaseShellState.DB_DIRECTORY_PROPERTY_NAME)) {
                         @Override
                         protected Database obtainNewActiveDatabase() throws Exception {
                             RemoteDatabaseStorage storage = new RemoteDatabaseStorage();

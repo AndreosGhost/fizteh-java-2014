@@ -47,7 +47,7 @@ public class ClientGeneralStateTest extends InterpreterTestBase<ClientGeneralSta
 
     @Before
     public void prepareRemoteAPITest() throws Exception {
-        serverState = new DBServerState();
+        serverState = new DBServerState(DB_ROOT.toString());
         new Shell(serverState);
         serverState.startServer(10001);
     }
@@ -55,6 +55,21 @@ public class ClientGeneralStateTest extends InterpreterTestBase<ClientGeneralSta
     @After
     public void cleanupRemoteAPITest() throws IOException {
         serverState.stopServer();
+    }
+
+    @Test
+    public void testCreateTableAndPutSmth() throws IOException, TerminalException {
+        runBatchExpectZero(
+                "connect localhost 10001",
+                "create t1 (String)",
+                "use t1",
+                "put a [\"b\"]",
+                "commit");
+        assertEquals(
+                makeTerminalExpectedMessage("connected", "created", "using t1", "new", "1"),
+                getOutput());
+        runBatchExpectZero("connect localhost 10001", "use t1", "get a");
+        assertEquals(makeTerminalExpectedMessage("connected", "using t1", "found", "[\"b\"]"), getOutput());
     }
 
     @Test

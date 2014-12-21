@@ -27,7 +27,7 @@ class RemoteTableProviderImpl extends UnicastRemoteObject implements IRemoteTabl
 
     private RemoteTableStub wrapInStub(Table table) throws UnexpectedRemoteException {
         try {
-            return new RemoteTableStub(new RemoteTableImpl(table), (table == null ? null : table.getName()));
+            return table == null ? null : new RemoteTableStub(new RemoteTableImpl(table), table.getName());
         } catch (RemoteException exc) {
             throw new UnexpectedRemoteException(exc);
         }

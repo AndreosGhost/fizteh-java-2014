@@ -52,10 +52,7 @@ public final class ClientCommands extends SimpleCommandContainer<DBClientState> 
                 }
             };
     public static final Command<DBClientState> WHEREAMI = new AbstractCommand<DBClientState>(
-            "whereami",
-            "",
-            "prints host and port you are connected to",
-            1) {
+            "whereami", "", "prints host and port you are connected to", 1) {
         @Override
         public void executeSafely(DBClientState state, String[] args) throws
                                                                       IllegalArgumentException,

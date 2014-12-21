@@ -12,9 +12,9 @@ public final class DatabaseFactory implements Closeable {
     private final TableProvider provider;
     private final String databasePath;
 
-    public DatabaseFactory() throws Exception {
+    public DatabaseFactory(String databasePath) throws Exception {
         factory = new DBTableProviderFactory();
-        databasePath = System.getProperty(SingleDatabaseShellState.DB_DIRECTORY_PROPERTY_NAME);
+        this.databasePath = databasePath;
         provider = factory.create(databasePath);
     }
 

@@ -22,7 +22,7 @@ public abstract class ClientServerGeneralState extends JoinedState<ClientServerG
     private ClientGeneralState clientState;
     private DBServerState serverState;
 
-    public ClientServerGeneralState() throws TerminalException {
+    public ClientServerGeneralState(String databaseRoot) throws TerminalException {
         ClientServerGeneralState genState = this;
         clientState = new ClientGeneralState() {
             @Override
@@ -30,7 +30,7 @@ public abstract class ClientServerGeneralState extends JoinedState<ClientServerG
                 return genState.obtainNewActiveDatabase();
             }
         };
-        serverState = new DBServerState();
+        serverState = new DBServerState(databaseRoot);
 
         new Shell<>(clientState);
         new Shell<>(serverState);

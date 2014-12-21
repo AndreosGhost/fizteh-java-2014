@@ -36,7 +36,7 @@ final class RemoteTableProviderStub implements RemoteTableProvider, Serializable
     /**
      * For synchronization on client side.
      */
-    private transient ValidityController validityController;
+    private final ValidityController validityController = new ValidityController();
     /**
      * Local stubs associated with this provider.
      */
@@ -64,7 +64,6 @@ final class RemoteTableProviderStub implements RemoteTableProvider, Serializable
         this.locationInStorage = locationInStorage;
 
         // Initializing transient fields.
-        validityController = new ValidityController();
         tableStubs = new HashMap<>();
         tableStubClosedByMe = false;
     }
@@ -77,21 +76,21 @@ final class RemoteTableProviderStub implements RemoteTableProvider, Serializable
         Lock lock = tableStubsLock.readLock();
         lock.lock();
         try {
-            RemoteTableStub oldStub = tableStubs.get(name);
-            if (oldStub == null) {
+            if (!tableStubs.containsKey(name)) {
                 lock.unlock();
                 lock = tableStubsLock.writeLock();
                 lock.lock();
-                oldStub = tableStubs.get(name);
-                if (oldStub == null) {
+                if (!tableStubs.containsKey(name)) {
                     tableStubs.put(name, tableStub);
-                    tableStub.bindToProviderStub(this);
+                    if (tableStub != null) {
+                        tableStub.bindToProviderStub(this);
+                    }
                     return tableStub;
                 } else {
-                    return oldStub;
+                    return tableStubs.get(name);
                 }
             } else {
-                return oldStub;
+                return tableStubs.get(name);
             }
         } finally {
             lock.unlock();

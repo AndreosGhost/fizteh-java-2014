@@ -25,13 +25,14 @@ import java.util.stream.Collectors;
 public class DBServerState extends BaseShellState<DBServerState> {
     private static final ServerCommands COMMANDS = ServerCommands.obtainInstance();
     private static final String DATABASE_ROOT_PROPERTY = "fizteh.db.dir";
+    private final String databaseRoot;
     private Supplier<ShellState> clientShellStateSupplier;
     private Server server;
     private RemoteTableProviderFactoryImpl factory;
     private TableProvider provider;
-    private String databaseRoot;
 
-    public DBServerState() {
+    public DBServerState(String databaseRoot) {
+        this.databaseRoot = databaseRoot;
         RemoteTableProviderFactory storage = new RemoteDatabaseStorage();
         DBServerState serverState = this;
         this.clientShellStateSupplier = () -> new SingleDatabaseShellState() {
@@ -59,7 +60,6 @@ public class DBServerState extends BaseShellState<DBServerState> {
         }
 
         try {
-            databaseRoot = System.getProperty(DATABASE_ROOT_PROPERTY);
             factory = new RemoteTableProviderFactoryImpl();
             provider = factory.establishStorage(databaseRoot);
 

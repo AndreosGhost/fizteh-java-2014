@@ -21,6 +21,13 @@ public class InterpreterTest extends InterpreterTestBase<AlternativeShellState> 
     }
 
     @Test
+    public void testUnclosedQuotes() throws TerminalException {
+        runBatchExpectNonZero("echo [\"quotes']");
+
+        assertEquals(makeTerminalExpectedMessage("Failed to parse: Cannot find closing quotes"), getOutput());
+    }
+
+    @Test
     public void testUnexpectedMethodError() throws TerminalException {
         runBatchExpectNonZero(AlternativeShellState.THROW_RUNTIME.getName());
 

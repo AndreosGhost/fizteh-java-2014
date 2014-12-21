@@ -12,7 +12,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.io.Reader;
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -46,8 +45,6 @@ public class Shell<ShellStateImpl extends ShellState<ShellStateImpl>> {
      * If the user is entering commands or it is package mode.
      */
     private boolean interactive;
-
-    private Reader inputStreamReader;
 
     public Shell(ShellStateImpl shellState, OutputStream outputStream) throws TerminalException {
         this.shellState = shellState;
@@ -190,13 +187,6 @@ public class Shell<ShellStateImpl extends ShellState<ShellStateImpl>> {
         }
     }
 
-    public Reader getInputStreamReader() {
-        if (inputStreamReader == null) {
-            throw new IllegalStateException("No reader now");
-        }
-        return inputStreamReader;
-    }
-
     /**
      * Execute commands from input stream. Commands are awaited till the-end-of-stream.
      */
@@ -213,7 +203,6 @@ public class Shell<ShellStateImpl extends ShellState<ShellStateImpl>> {
 
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(stream), READ_BUFFER_SIZE)) {
-            inputStreamReader = reader;
             while (true) {
                 if (interactive) {
                     outputStream.print(shellState.getGreetingString());
@@ -225,19 +214,24 @@ public class Shell<ShellStateImpl extends ShellState<ShellStateImpl>> {
                     break;
                 }
 
-                List<String[]> commands = splitCommandsString(str);
                 try {
-                    for (String[] command : commands) {
-                        execute(command);
+                    try {
+                        List<String[]> commands = splitCommandsString(str);
+                        for (String[] command : commands) {
+                            execute(command);
+                        }
+                    } catch (ParseException exc) {
+                        handleError("Failed to parse: " + exc.getMessage(), exc, true, getOutputStream());
                     }
                 } catch (TerminalException exc) {
                     // Exception is already handled.
                     if (!interactive) {
+                        exitRequested = true;
                         shellState.prepareToExit(1);
                     }
                 }
             }
-        } catch (IOException | ParseException exc) {
+        } catch (IOException exc) {
             exitRequested = true;
             handleError("Error in input stream: " + exc.getMessage(), exc, true, getOutputStream());
             // No need to cleanup - work has not been started.
@@ -245,7 +239,6 @@ public class Shell<ShellStateImpl extends ShellState<ShellStateImpl>> {
             exitRequested = true;
             return request.getCode();
         } finally {
-            inputStreamReader = null;
             if (!exitRequested) {
                 try {
                     shellState.prepareToExit(0);

@@ -26,27 +26,37 @@ final class RemoteTableStub implements Table, Serializable, Closeable {
     private final String tableName;
 
     private final IRemoteTable remoteTable;
-
+    /**
+     * For synchronization on client side.
+     */
+    private final ValidityController validityController = new ValidityController();
     /**
      * Local variable at the client side.
      */
     private transient RemoteTableProviderStub providerStub;
 
-    /**
-     * For synchronization on client side.
-     */
-    private transient ValidityController validityController;
-
     public RemoteTableStub(RemoteTableImpl remoteTable, String tableName) {
         this.remoteTable = remoteTable;
         this.tableName = tableName;
+        init(); // Called at server side.
     }
 
+    public IRemoteTable getRemoteTable() {
+        return remoteTable;
+    }
+
+    private void init() {
+        // Initializing transient fields.
+        //        validityController = new ValidityController();
+    }
+
+    /**
+     * Called at client side when we get the stub.
+     */
     public void bindToProviderStub(RemoteTableProviderStub providerStub) {
         this.providerStub = providerStub;
 
-        // Initializing transient fields.
-        validityController = new ValidityController();
+        init();
     }
 
     @Override

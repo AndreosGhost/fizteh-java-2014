@@ -2,13 +2,14 @@ package ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support;
 
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.InvalidatedObjectException;
 
+import java.io.Serializable;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Convenience class to control one's validity.
  */
-public final class ValidityController {
+public final class ValidityController implements Serializable {
     private final ReadWriteLock validityLock = new ReentrantReadWriteLock(true);
     private boolean valid = true;
 

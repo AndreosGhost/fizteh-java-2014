@@ -425,22 +425,6 @@ public class DatabaseShellTest extends InterpreterTestBase<SingleDatabaseShellSt
     }
 
     @Test
-    public void testRunInteractiveWithUnparseableStream() throws TerminalException {
-        exception.expect(TerminalException.class);
-        exception.expectMessage(containsString("Error in input stream"));
-
-        runInteractiveExpectNonZero("do smth \"");
-    }
-
-    @Test
-    public void testRunWithUnparseableStream() throws TerminalException {
-        exception.expect(TerminalException.class);
-        exception.expectMessage(containsString("Error in input stream: Cannot find closing quotes"));
-
-        runBatchExpectNonZero("do smth \""); // Unclosed quotes.
-    }
-
-    @Test
     public void testCreateTableWithInvalidName1() throws TerminalException {
         runBatchExpectNonZero(
                 "create "
