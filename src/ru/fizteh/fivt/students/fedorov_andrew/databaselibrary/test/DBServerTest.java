@@ -1,0 +1,69 @@
+package ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.test;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.shell.Shell;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.telnet.server.DBServerState;
+
+import java.io.IOException;
+
+import static org.junit.Assert.*;
+
+@RunWith(JUnit4.class)
+public class DBServerTest extends TestBase {
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
+    private DBServerState serverState;
+
+    @Before
+    public void prepareRemoteAPITest() throws Exception {
+        serverState = new DBServerState(DB_ROOT.toString());
+        new Shell(serverState);
+    }
+
+    @After
+    public void cleanupRemoteAPITest() throws IOException {
+        serverState.stopServerIfStarted();
+    }
+
+    @Test
+    public void testDoubleStart() throws IOException {
+        serverState.startServer(10001);
+        exception.expect(IllegalStateException.class);
+        exception.expectMessage("not started: already started");
+        serverState.startServer(10002);
+    }
+
+    @Test
+    public void testDisconnectNotConnected() throws IOException {
+        exception.expect(IllegalStateException.class);
+        exception.expectMessage("not started");
+        serverState.stopServer();
+    }
+
+    @Test
+    public void testStartStop() throws IOException {
+        serverState.startServer(10001);
+        assertTrue(serverState.isStarted());
+        serverState.stopServer();
+        assertFalse(serverState.isStarted());
+    }
+
+    @Test
+    public void testStopIfConnected() throws IOException {
+        serverState.stopServerIfStarted();
+    }
+
+    @Test
+    public void testStopIfConnected2() throws IOException {
+        serverState.startServer(10001);
+        assertTrue(serverState.isStarted());
+        serverState.stopServerIfStarted();
+        assertFalse(serverState.isStarted());
+    }
+}

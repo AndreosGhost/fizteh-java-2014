@@ -171,5 +171,24 @@ public class RemoteDataStorageTest extends TestBase {
         Storeable storeable = tableFromB.get(key);
 
         assertEquals(value, storeable.getStringAt(0));
+
+        tableFromB.remove(key);
+        assertNull(tableFromA.get(key));
+        assertNull(tableFromB.get(key));
+    }
+
+    @Test
+    public void testRemoveTable() throws IOException {
+        RemoteDatabaseStorage storage = new RemoteDatabaseStorage();
+        RemoteTableProvider provider = storage.connect("localhost", Registry.REGISTRY_PORT);
+
+        String tableName = "table";
+
+        Table table = provider.createTable(tableName, Arrays.asList(String.class));
+
+        provider.removeTable(tableName);
+
+        exception.expect(InvalidatedObjectException.class);
+        table.list();
     }
 }

@@ -38,16 +38,10 @@ final class RemoteTableStub implements Table, Serializable, Closeable {
     public RemoteTableStub(RemoteTableImpl remoteTable, String tableName) {
         this.remoteTable = remoteTable;
         this.tableName = tableName;
-        init(); // Called at server side.
     }
 
     public IRemoteTable getRemoteTable() {
         return remoteTable;
-    }
-
-    private void init() {
-        // Initializing transient fields.
-        //        validityController = new ValidityController();
     }
 
     /**
@@ -55,8 +49,6 @@ final class RemoteTableStub implements Table, Serializable, Closeable {
      */
     public void bindToProviderStub(RemoteTableProviderStub providerStub) {
         this.providerStub = providerStub;
-
-        init();
     }
 
     @Override

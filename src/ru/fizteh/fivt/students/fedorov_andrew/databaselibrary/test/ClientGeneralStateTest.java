@@ -58,16 +58,17 @@ public class ClientGeneralStateTest extends InterpreterTestBase<ClientGeneralSta
     }
 
     @Test
+    public void testWhereAmI() throws IOException, TerminalException {
+        runBatchExpectZero("connect localhost 10001", "whereami");
+        assertEquals(makeTerminalExpectedMessage("connected", "local 10001"), getOutput());
+    }
+
+    @Test
     public void testCreateTableAndPutSmth() throws IOException, TerminalException {
         runBatchExpectZero(
-                "connect localhost 10001",
-                "create t1 (String)",
-                "use t1",
-                "put a [\"b\"]",
-                "commit");
+                "connect localhost 10001", "create t1 (String)", "use t1", "put a [\"b\"]", "commit");
         assertEquals(
-                makeTerminalExpectedMessage("connected", "created", "using t1", "new", "1"),
-                getOutput());
+                makeTerminalExpectedMessage("connected", "created", "using t1", "new", "1"), getOutput());
         runBatchExpectZero("connect localhost 10001", "use t1", "get a");
         assertEquals(makeTerminalExpectedMessage("connected", "using t1", "found", "[\"b\"]"), getOutput());
     }
