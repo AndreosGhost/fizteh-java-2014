@@ -18,6 +18,7 @@ import ru.fizteh.fivt.storage.structured.TableProvider;
 import ru.fizteh.fivt.storage.structured.TableProviderFactory;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.DBTableProviderFactory;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.StringTableImpl;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.InvalidatedObjectException;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.test.support.TestUtils;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.test.support.parallel.ControllableAgent;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.test.support.parallel.ControllableRunnable;
@@ -389,8 +390,8 @@ public class TableProviderTest extends TestBase {
         Table table = provider.createTable(name, DEFAULT_COLUMN_TYPES);
         provider.removeTable(name);
 
-        exception.expect(IllegalStateException.class);
-        exception.expectMessage("This object has been invalidated");
+        exception.expect(InvalidatedObjectException.class);
+        exception.expectMessage("Object has been invalidated");
 
         // Even calling to this simple method can cause IllegalStateException if the table has been removed.
         table.getName();

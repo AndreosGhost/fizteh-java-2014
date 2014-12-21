@@ -60,7 +60,7 @@ public abstract class SingleDatabaseShellState extends BaseShellState<SingleData
 
     @Override
     public void cleanup() {
-
+        getActiveDatabase().rollback();
     }
 
     @Override

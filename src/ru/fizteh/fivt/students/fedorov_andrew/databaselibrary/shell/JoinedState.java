@@ -11,46 +11,59 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * State that encapsulates several states that can be used. You need to create shell interpreter only for the
+ * joined state. You can decide when and how to react to command invocation requests to any state.<br/>
+ * If a command during execution throws {@link ru.fizteh.fivt.students.fedorov_andrew.databaselibrary
+ * .exception.ExitRequest} it is not handled by this default implementation.
+ * @param <S>
+ *         extending state for which interpreter is going to be created.
+ */
 public abstract class JoinedState<S extends ShellState<S>> extends BaseShellState<S> {
+    /**
+     * Wrapped commands
+     */
     private Map<String, Command<S>> allCommands;
     private int statesCount;
 
     private AccurateExceptionHandler<Void> exceptionHandler;
 
-    public JoinedState(AccurateExceptionHandler<Void> exceptionHandler,
-                       Map<String, ? extends Command<? extends ShellState>>... commandsMaps) {
-        this(exceptionHandler);
-        setAllCommands(commandsMaps);
+    /**
+     * Pure state with no commands and exception handler.
+     */
+    protected JoinedState() {
     }
 
-    public JoinedState(AccurateExceptionHandler<Void> exceptionHandler) {
-        setExceptionHandler(exceptionHandler);
-    }
-
-    public JoinedState(Map<String, ? extends Command<? extends ShellState>>... commandsMaps) {
-        setAllCommands(commandsMaps);
-    }
-
-    public JoinedState() {
-
-    }
-
+    /**
+     * Obtains currently used exception handler.
+     */
     public AccurateExceptionHandler<Void> getExceptionHandler() {
         return exceptionHandler;
     }
 
+    /**
+     * Sets the exception handler that is used to handle errors during command executions.
+     * @param exceptionHandler
+     *         exception handler with no extra data.
+     */
     protected void setExceptionHandler(AccurateExceptionHandler<Void> exceptionHandler) {
         this.exceptionHandler = exceptionHandler;
     }
 
+    /**
+     * Sets all acceptable commands that can be invoked.
+     * @param commandsMaps
+     *         array of command maps. Each command map is associated with state id (that is equal to the
+     *         order
+     *         number in this parameters sequence) which is used further to distinguish commands.
+     */
     protected final void setAllCommands(Map<String, ? extends Command<? extends ShellState>>...
                                                 commandsMaps) {
-        this.statesCount = commandsMaps.length;
         Map<String, Command<S>> allCommandsMap = new HashMap<>();
 
-        int id = 0;
+        int idCounter = 0;
         for (Map<String, ? extends Command<? extends ShellState>> commands : commandsMaps) {
-            int stateID = id;
+            int stateID = idCounter;
             commands.forEach(
                     (name, command) -> {
                         if (allCommandsMap.containsKey(name)) {
@@ -59,10 +72,11 @@ public abstract class JoinedState<S extends ShellState<S>> extends BaseShellStat
                             allCommandsMap.put(name, new CommandWrapper(stateID, command));
                         }
                     });
-            id++;
+            idCounter++;
         }
 
         allCommands = Collections.unmodifiableMap(allCommandsMap);
+        statesCount = commandsMaps.length;
     }
 
     /**
@@ -105,18 +119,38 @@ public abstract class JoinedState<S extends ShellState<S>> extends BaseShellStat
         throw new ExitRequest(code);
     }
 
+    /**
+     * Returns mapping between command names and command wrappers that on {@link Command#execute(ShellState,
+     * String[])} calls one of two methods: {@link #onExecuteConflict(List, List,
+     * String[])} or {@link #onExecuteRequested(int, Command, String[])}.<br/>
+     * Exceptions thrown by these methods are handled with local exception handler.<br/>
+     * As soon as all possible state commands wrapped by one multicommand have the same name, {@link
+     * Command#getName()} returns that name, but both {@link Command#getInfo()} and {@link
+     * Command#getInvocation()} throw {@link UnsupportedOperationException}.
+     * @see #setExceptionHandler(AccurateExceptionHandler)
+     * @see #getExceptionHandler()
+     * @see #onExecuteRequested(int, Command, String[])
+     * @see #onExecuteConflict(List, List, String[])
+     */
     @Override
     public Map<String, Command<S>> getCommands() {
         return allCommands;
     }
 
+    /**
+     * Convenience method.
+     * Equivalent to {@code Objects.equals(commandA.getName(), commandB.getName())}.
+     */
     protected boolean areNamesEqual(Command commandA, Command commandB) {
         return Objects.equals(commandA.getName(), commandB.getName());
     }
 
     /**
      * This method is called when there are several commands with the same name from different states. You
-     * decide how to resolve this conflict.
+     * decide how to resolve this conflict. <br/>
+     * The default implementation throws {@link java.lang.UnsupportedOperationException}.<br/>
+     * In this method you can also call {@link #onExecuteRequested(int, Command, String[])} after you have
+     * chosen for which state to call the command.
      * @throws Exception
      */
     protected void onExecuteConflict(List<Integer> stateIDs, List<Command> commands, String[] args)
@@ -124,10 +158,18 @@ public abstract class JoinedState<S extends ShellState<S>> extends BaseShellStat
         throw new UnsupportedOperationException("Execute conflicts are not resolved");
     }
 
+    /**
+     * Runs normal execution of the given state command. The default implementation is {@code
+     * command.execute(obtainState(stateID), args)}.
+     * @throws java.lang.Exception
+     */
     protected void executeNormally(int stateID, Command command, String[] args) throws Exception {
         command.execute(obtainState(stateID), args);
     }
 
+    /**
+     * Obtains existing or new state for the given state id.
+     */
     protected abstract ShellState obtainState(int stateID);
 
     /**
@@ -144,7 +186,12 @@ public abstract class JoinedState<S extends ShellState<S>> extends BaseShellStat
         executeNormally(stateID, command, args);
     }
 
-    class CommandWrapper implements Command {
+    /**
+     * Command for {@link ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.shell.JoinedState} that
+     * wraps
+     * at least one command from a state.
+     */
+    class CommandWrapper implements Command<S> {
         private List<Integer> states = new LinkedList<>();
         private List<Command> commands = new LinkedList<>();
 
@@ -183,12 +230,12 @@ public abstract class JoinedState<S extends ShellState<S>> extends BaseShellStat
 
         @Override
         public String getInfo() {
-            throw new UnsupportedOperationException("You cannot operate with multi command directly.");
+            throw new UnsupportedOperationException("You cannot operate with command wrapper directly.");
         }
 
         @Override
         public String getInvocation() {
-            throw new UnsupportedOperationException("You cannot operate with multi command directly.");
+            throw new UnsupportedOperationException("You cannot operate with command wrapper directly.");
         }
     }
 }

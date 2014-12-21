@@ -44,10 +44,7 @@ public class DatabaseShellTest extends InterpreterTestBase<SingleDatabaseShellSt
     @Test
     public void testPutCompositeStoreable() throws TerminalException {
         runBatchExpectZero(
-                "create t1 (String  int boolean)",
-                "use t1",
-                "put key [ \"hello\", 2, null ]",
-                "commit");
+                "create t1 (String  int boolean)", "use t1", "put key [ \"hello\", 2, null ]", "commit");
 
         assertThat("Output after put", getOutput(), containsString(makeTerminalExpectedMessage("new")));
 

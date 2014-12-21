@@ -371,7 +371,7 @@ final class DBTableProvider implements AutoCloseableProvider {
      * @throws DatabaseIOException
      */
     private void loadMissingTables() throws DatabaseIOException {
-        loadTables(tables::containsKey);
+        loadTables((name) -> !tables.containsKey(name));
     }
 
     private void reloadAllTables() throws DatabaseIOException {

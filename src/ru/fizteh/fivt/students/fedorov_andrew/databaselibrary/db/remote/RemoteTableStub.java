@@ -3,7 +3,13 @@ package ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.remote;
 import ru.fizteh.fivt.storage.structured.ColumnFormatException;
 import ru.fizteh.fivt.storage.structured.Storeable;
 import ru.fizteh.fivt.storage.structured.Table;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.InvalidatedObjectException;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.UnexpectedRemoteException;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.ValidityController;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.ValidityController.KillLock;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.ValidityController.UseLock;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.Serializable;
 import java.rmi.RemoteException;
@@ -13,109 +19,206 @@ import java.util.List;
  * Stub of remote table that is transferred from server to client. <br/>
  * I created this stub because task API is not friendly and there are no RemoteExceptions.
  */
-class RemoteTableStub implements Table, Serializable {
-    private final IRemoteTable table;
+final class RemoteTableStub implements Table, Serializable, Closeable {
+    /**
+     * Table name is cached for correct close handling at client's local.
+     */
+    private final String tableName;
 
-    public RemoteTableStub(RemoteTableImpl table) {
-        this.table = table;
+    private final IRemoteTable remoteTable;
+
+    /**
+     * Local variable at the client side.
+     */
+    private transient RemoteTableProviderStub providerStub;
+
+    /**
+     * For synchronization on client side.
+     */
+    private transient ValidityController validityController;
+
+    public RemoteTableStub(RemoteTableImpl remoteTable, String tableName) {
+        this.remoteTable = remoteTable;
+        this.tableName = tableName;
+    }
+
+    public void bindToProviderStub(RemoteTableProviderStub providerStub) {
+        this.providerStub = providerStub;
+
+        // Initializing transient fields.
+        validityController = new ValidityController();
+    }
+
+    @Override
+    public void close() {
+        try (KillLock lock = validityController.useAndKill()) {
+            providerStub.onTableStubClosed(tableName);
+        }
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+        super.finalize();
+        close();
+    }
+
+    private void forceClose(UseLock activeUseLock) {
+        try (KillLock killLock = activeUseLock.obtainKillLockInstead()) {
+            close();
+        }
     }
 
     @Override
     public Storeable put(String key, Storeable value) throws ColumnFormatException {
-        try {
-            return table.put(key, value);
+        try (UseLock lock = validityController.use()) {
+            try {
+                return remoteTable.put(key, value);
+            } catch (InvalidatedObjectException exc) {
+                forceClose(lock);
+                throw exc;
+            }
         } catch (RemoteException exc) {
-            throw new RuntimeException(exc);
+            throw new UnexpectedRemoteException(exc);
         }
     }
 
     @Override
     public Storeable remove(String key) {
-        try {
-            return table.remove(key);
+        try (UseLock lock = validityController.use()) {
+            try {
+                return remoteTable.remove(key);
+            } catch (InvalidatedObjectException exc) {
+                forceClose(lock);
+                throw exc;
+            }
         } catch (RemoteException exc) {
-            throw new RuntimeException(exc);
+            throw new UnexpectedRemoteException(exc);
         }
     }
 
     @Override
     public int size() {
-        try {
-            return table.size();
+        try (UseLock lock = validityController.use()) {
+            try {
+                return remoteTable.size();
+            } catch (InvalidatedObjectException exc) {
+                forceClose(lock);
+                throw exc;
+            }
         } catch (RemoteException exc) {
-            throw new RuntimeException(exc);
+            throw new UnexpectedRemoteException(exc);
         }
     }
 
     @Override
     public List<String> list() {
-        try {
-            return table.list();
+        try (UseLock lock = validityController.use()) {
+            try {
+                return remoteTable.list();
+            } catch (InvalidatedObjectException exc) {
+                forceClose(lock);
+                throw exc;
+            }
         } catch (RemoteException exc) {
-            throw new RuntimeException(exc);
+            throw new UnexpectedRemoteException(exc);
         }
     }
 
     @Override
     public int commit() throws IOException {
-        try {
-            return table.commit();
+        try (UseLock lock = validityController.use()) {
+            try {
+                return remoteTable.commit();
+            } catch (InvalidatedObjectException exc) {
+                forceClose(lock);
+                throw exc;
+            }
         } catch (RemoteException exc) {
-            throw new RuntimeException(exc);
+            throw new UnexpectedRemoteException(exc);
         }
     }
 
     @Override
     public int rollback() {
-        try {
-            return table.rollback();
+        try (UseLock lock = validityController.use()) {
+            try {
+                return remoteTable.rollback();
+            } catch (InvalidatedObjectException exc) {
+                forceClose(lock);
+                throw exc;
+            }
         } catch (RemoteException exc) {
-            throw new RuntimeException(exc);
+            throw new UnexpectedRemoteException(exc);
         }
     }
 
     @Override
     public int getNumberOfUncommittedChanges() {
-        try {
-            return table.getNumberOfUncommittedChanges();
+        try (UseLock lock = validityController.use()) {
+            try {
+                return remoteTable.getNumberOfUncommittedChanges();
+            } catch (InvalidatedObjectException exc) {
+                forceClose(lock);
+                throw exc;
+            }
         } catch (RemoteException exc) {
-            throw new RuntimeException(exc);
+            throw new UnexpectedRemoteException(exc);
         }
     }
 
     @Override
     public int getColumnsCount() {
-        try {
-            return table.getColumnsCount();
+        try (UseLock lock = validityController.use()) {
+            try {
+                return remoteTable.getColumnsCount();
+            } catch (InvalidatedObjectException exc) {
+                forceClose(lock);
+                throw exc;
+            }
         } catch (RemoteException exc) {
-            throw new RuntimeException(exc);
+            throw new UnexpectedRemoteException(exc);
         }
     }
 
     @Override
     public Class<?> getColumnType(int columnIndex) throws IndexOutOfBoundsException {
-        try {
-            return table.getColumnType(columnIndex);
+        try (UseLock lock = validityController.use()) {
+            try {
+                return remoteTable.getColumnType(columnIndex);
+            } catch (InvalidatedObjectException exc) {
+                forceClose(lock);
+                throw exc;
+            }
         } catch (RemoteException exc) {
-            throw new RuntimeException(exc);
+            throw new UnexpectedRemoteException(exc);
         }
     }
 
     @Override
     public String getName() {
-        try {
-            return table.getName();
+        try (UseLock lock = validityController.use()) {
+            try {
+                return remoteTable.getName();
+            } catch (InvalidatedObjectException exc) {
+                forceClose(lock);
+                throw exc;
+            }
         } catch (RemoteException exc) {
-            throw new RuntimeException(exc);
+            throw new UnexpectedRemoteException(exc);
         }
     }
 
     @Override
     public Storeable get(String key) {
-        try {
-            return table.get(key);
+        try (UseLock lock = validityController.use()) {
+            try {
+                return remoteTable.get(key);
+            } catch (InvalidatedObjectException exc) {
+                forceClose(lock);
+                throw exc;
+            }
         } catch (RemoteException exc) {
-            throw new RuntimeException(exc);
+            throw new UnexpectedRemoteException(exc);
         }
     }
 }

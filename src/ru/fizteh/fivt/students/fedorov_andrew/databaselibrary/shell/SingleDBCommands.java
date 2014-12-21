@@ -96,7 +96,7 @@ public class SingleDBCommands extends SimpleCommandContainer<SingleDatabaseShell
             };
     public static final Command<SingleDatabaseShellState> EXIT =
             new AbstractCommand<SingleDatabaseShellState>(
-                    "exit", null, "saves all data to file system and stops interpretation", 1) {
+                    "exit", null, "rollbacks all changes and stops interpretation", 1) {
                 @Override
                 public void execute(SingleDatabaseShellState state, String[] args) throws TerminalException {
                     state.prepareToExit(0);

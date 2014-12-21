@@ -14,20 +14,7 @@ public final class ValidityController {
 
     private void checkValid() {
         if (!valid) {
-            throw new InvalidatedObjectException("This object has been invalidated: ");
-        }
-    }
-
-    /**
-     * Invalidates
-     */
-    private void invalidate() {
-        validityLock.writeLock().lock();
-        try {
-            checkValid();
-            valid = false;
-        } finally {
-            validityLock.writeLock().unlock();
+            throw new InvalidatedObjectException("Object has been invalidated");
         }
     }
 
@@ -65,17 +52,33 @@ public final class ValidityController {
         }
     }
 
-    public class UseLock implements AutoCloseable {
+    public interface ValidityLock extends AutoCloseable {
+        @Override
+        void close();
+    }
+
+    public class UseLock implements ValidityLock {
+        private boolean allowMultipleCloseAttempts = false;
+
         @Override
         public void close() {
-            validityLock.readLock().unlock();
+            if (!allowMultipleCloseAttempts) {
+                validityLock.readLock().unlock();
+            }
+        }
+
+        public KillLock obtainKillLockInstead() {
+            close();
+            allowMultipleCloseAttempts = true;
+            // Further close() calls (e.g., from try-with-resources) will be ignored for UseLock.
+            return useAndKill();
         }
     }
 
-    public class KillLock implements AutoCloseable {
+    public class KillLock implements ValidityLock {
         @Override
         public void close() {
-            invalidate();
+            valid = false;
             validityLock.writeLock().unlock();
         }
     }

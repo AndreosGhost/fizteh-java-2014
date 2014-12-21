@@ -9,8 +9,12 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.List;
 
+/**
+ * Remote table object that is stored on server and available through RMI mechanism.
+ */
 class RemoteTableImpl extends UnicastRemoteObject implements IRemoteTable {
-    private final transient Table table;
+
+    private final Table table;
 
     public RemoteTableImpl(Table table) throws RemoteException {
         this.table = table;

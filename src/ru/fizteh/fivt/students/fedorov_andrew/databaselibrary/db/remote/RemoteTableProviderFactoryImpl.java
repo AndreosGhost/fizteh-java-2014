@@ -1,6 +1,5 @@
 package ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.remote;
 
-import ru.fizteh.fivt.storage.structured.RemoteTableProvider;
 import ru.fizteh.fivt.storage.structured.TableProvider;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.AutoCloseableTableProviderFactory;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.DBTableProviderFactory;
@@ -25,14 +24,20 @@ public class RemoteTableProviderFactoryImpl extends UnicastRemoteObject
 
     private AutoCloseableTableProviderFactory factory;
 
+    /**
+     * Server-local table provider.
+     */
     private TableProvider provider;
 
-    private RemoteTableProvider remoteProvider;
+    /**
+     * Server-local singleton implementation of remote table provider that is wrapped in stub.
+     */
+    private IRemoteTableProvider remoteProvider;
 
     public RemoteTableProviderFactoryImpl() throws RemoteException {
     }
 
-    public TableProvider getProvider() {
+    public synchronized TableProvider getProvider() {
         return provider;
     }
 
@@ -47,7 +52,7 @@ public class RemoteTableProviderFactoryImpl extends UnicastRemoteObject
     }
 
     @Override
-    public void close() throws IOException {
+    public synchronized void close() throws IOException {
         if (!isBound()) {
             return;
         }
@@ -59,17 +64,20 @@ public class RemoteTableProviderFactoryImpl extends UnicastRemoteObject
         } finally {
             factory = null;
             provider = null;
+            remoteProvider = null;
             registry = null;
         }
     }
 
     @Override
-    public RemoteTableProvider obtainRemoteProvider() throws IOException {
-        return remoteProvider;
+    public synchronized RemoteTableProviderStub obtainRemoteProvider() throws IOException {
+        requireBound();
+        return new RemoteTableProviderStub(remoteProvider);
     }
 
     @Override
-    public TableProvider establishStorage(String localDatabaseRoot, int port) throws IOException {
+    public synchronized TableProvider establishStorage(String localDatabaseRoot, int port)
+            throws IOException {
         if (isBound()) {
             throw new IllegalStateException("Factory already established");
         }
@@ -79,13 +87,15 @@ public class RemoteTableProviderFactoryImpl extends UnicastRemoteObject
             provider = factory.create(localDatabaseRoot);
 
             try {
-                registry = LocateRegistry.createRegistry(port);
-            } catch (RemoteException exc) {
                 registry = LocateRegistry.getRegistry(port);
-            }
-            registry.rebind(FACTORY_NAME, this);
+                registry.rebind(FACTORY_NAME, this);
 
-            remoteProvider = new RemoteTableProviderStub(new RemoteTableProviderImpl(provider));
+            } catch (RemoteException exc) {
+                registry = LocateRegistry.createRegistry(port);
+                registry.rebind(FACTORY_NAME, this);
+            }
+
+            remoteProvider = new RemoteTableProviderImpl(provider);
 
             return provider;
         } catch (Exception exc) {
@@ -97,14 +107,14 @@ public class RemoteTableProviderFactoryImpl extends UnicastRemoteObject
                 factory = null;
                 provider = null;
                 registry = null;
+                remoteProvider = null;
             } catch (Exception ignored) {
                 Log.log(
                         RemoteTableProviderFactoryImpl.class,
                         ignored,
                         "Failed to cleanup after getting exception on establishment");
-            } finally {
-                throw exc;
             }
+            throw exc;
         }
     }
 }

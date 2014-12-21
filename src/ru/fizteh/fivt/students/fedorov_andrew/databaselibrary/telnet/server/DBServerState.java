@@ -4,7 +4,6 @@ import ru.fizteh.fivt.storage.structured.RemoteTableProvider;
 import ru.fizteh.fivt.storage.structured.RemoteTableProviderFactory;
 import ru.fizteh.fivt.storage.structured.TableProvider;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.Database;
-import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.remote.IRemoteTableProviderFactory;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.remote.RemoteDatabaseStorage;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.remote.RemoteTableProviderFactoryImpl;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.ExitRequest;
@@ -28,7 +27,7 @@ public class DBServerState extends BaseShellState<DBServerState> {
     private static final String DATABASE_ROOT_PROPERTY = "fizteh.db.dir";
     private Supplier<ShellState> clientShellStateSupplier;
     private Server server;
-    private IRemoteTableProviderFactory factory;
+    private RemoteTableProviderFactoryImpl factory;
     private TableProvider provider;
     private String databaseRoot;
 
@@ -73,9 +72,8 @@ public class DBServerState extends BaseShellState<DBServerState> {
                 }
             } catch (Exception ignored) {
                 Log.log(DBServerState.class, ignored, "Failed to close factory after server install failure");
-            } finally {
-                throw exc;
             }
+            throw exc;
         }
     }
 
@@ -114,19 +112,17 @@ public class DBServerState extends BaseShellState<DBServerState> {
 
     @Override
     public void cleanup() {
-        // Nothing to clean.
-    }
-
-    @Override
-    public void prepareToExit(int exitCode) throws ExitRequest {
         try {
             stopServerIfStarted();
         } catch (Exception exc) {
             Log.log(DBServerState.class, exc);
-            if (exitCode == 0) {
-                exitCode = -1;
-            }
         }
+    }
+
+    @Override
+    public void prepareToExit(int exitCode) throws ExitRequest {
+        Log.log("Preparing to stop server with exit code: " + exitCode);
+        cleanup();
         throw new ExitRequest(exitCode);
     }
 
@@ -134,12 +130,6 @@ public class DBServerState extends BaseShellState<DBServerState> {
     public void init(Shell<DBServerState> host) throws Exception {
         super.init(host);
         server = new Server(host.getOutputStream());
-    }
-
-    @Override
-    protected void finalize() throws Throwable {
-        super.finalize();
-        stopServerIfStarted();
     }
 
     @Override

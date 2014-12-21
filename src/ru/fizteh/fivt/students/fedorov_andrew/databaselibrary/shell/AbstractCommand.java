@@ -4,6 +4,7 @@ import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.Executio
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.InvocationException;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.NoActiveTableException;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.TerminalException;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.UnexpectedRemoteException;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.WrongArgsNumberException;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.AccurateExceptionHandler;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.Log;
@@ -145,7 +146,8 @@ public abstract class AbstractCommand<State extends ShellState<State>> implement
                                                                       InvocationException,
                                                                       ParseException,
                                                                       IOException,
-                                                                      ExecutionNotPermittedException;
+                                                                      ExecutionNotPermittedException,
+                                                                      UnexpectedRemoteException;
 
     void checkArgsNumber(String[] args, int minimal, int maximal) throws WrongArgsNumberException {
         if (args.length < minimal || args.length > maximal) {

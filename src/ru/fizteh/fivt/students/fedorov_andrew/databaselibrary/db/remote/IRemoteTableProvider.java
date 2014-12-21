@@ -23,7 +23,7 @@ interface IRemoteTableProvider extends Remote {
      * @throws IllegalArgumentException
      *         Если название таблицы null или имеет недопустимое значение.
      */
-    Table getTable(String name) throws RemoteException;
+    RemoteTableStub getTable(String name) throws RemoteException;
 
     /**
      * Создаёт таблицу с указанным названием.
@@ -39,7 +39,7 @@ interface IRemoteTableProvider extends Remote {
      * @throws java.io.IOException
      *         При ошибках ввода/вывода.
      */
-    Table createTable(String name, List<Class<?>> columnTypes) throws IOException;
+    RemoteTableStub createTable(String name, List<Class<?>> columnTypes) throws IOException;
 
     /**
      * Удаляет существующую таблицу с указанным названием.

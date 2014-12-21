@@ -13,18 +13,18 @@ import java.net.InetAddress;
 import java.text.ParseException;
 import java.util.Map;
 
-public final class ClientCommands extends SimpleCommandContainer<ClientState> {
-    public static final Command<ClientState> CONNECT = new AbstractCommand<ClientState>(
+public final class ClientCommands extends SimpleCommandContainer<DBClientState> {
+    public static final Command<DBClientState> CONNECT = new AbstractCommand<DBClientState>(
             "connect", "<host> <port>", "connects to a database storage server", 3) {
         @Override
-        public void executeSafely(ClientState state, String[] args) throws
-                                                                    IllegalArgumentException,
-                                                                    NoActiveTableException,
-                                                                    IllegalStateException,
-                                                                    NullPointerException,
-                                                                    InvocationException,
-                                                                    ParseException,
-                                                                    IOException {
+        public void executeSafely(DBClientState state, String[] args) throws
+                                                                      IllegalArgumentException,
+                                                                      NoActiveTableException,
+                                                                      IllegalStateException,
+                                                                      NullPointerException,
+                                                                      InvocationException,
+                                                                      ParseException,
+                                                                      IOException {
             int port;
 
             try {
@@ -36,47 +36,50 @@ public final class ClientCommands extends SimpleCommandContainer<ClientState> {
             state.getOutputStream().println("connected");
         }
     };
-    public static final Command<ClientState> DISCONNECT =
-            new AbstractCommand<ClientState>("disconnect", "", "disconnects from database storage", 1) {
+    public static final Command<DBClientState> DISCONNECT =
+            new AbstractCommand<DBClientState>("disconnect", "", "disconnects from database storage", 1) {
                 @Override
-                public void executeSafely(ClientState state, String[] args) throws
-                                                                            IllegalArgumentException,
-                                                                            NoActiveTableException,
-                                                                            IllegalStateException,
-                                                                            NullPointerException,
-                                                                            InvocationException,
-                                                                            ParseException,
-                                                                            IOException {
+                public void executeSafely(DBClientState state, String[] args) throws
+                                                                              IllegalArgumentException,
+                                                                              NoActiveTableException,
+                                                                              IllegalStateException,
+                                                                              NullPointerException,
+                                                                              InvocationException,
+                                                                              ParseException,
+                                                                              IOException {
                     state.disconnect();
                     state.getOutputStream().println("disconnected");
                 }
             };
-    public static final Command<ClientState> WHEREAMI =
-            new AbstractCommand<ClientState>("whereami", "", "prints host and port you are connected to", 1) {
-                @Override
-                public void executeSafely(ClientState state, String[] args) throws
-                                                                            IllegalArgumentException,
-                                                                            NoActiveTableException,
-                                                                            IllegalStateException,
-                                                                            NullPointerException,
-                                                                            InvocationException,
-                                                                            ParseException,
-                                                                            IOException {
-                    InetAddress address = state.getHost();
-                    int port = state.getPort();
+    public static final Command<DBClientState> WHEREAMI = new AbstractCommand<DBClientState>(
+            "whereami",
+            "",
+            "prints host and port you are connected to",
+            1) {
+        @Override
+        public void executeSafely(DBClientState state, String[] args) throws
+                                                                      IllegalArgumentException,
+                                                                      NoActiveTableException,
+                                                                      IllegalStateException,
+                                                                      NullPointerException,
+                                                                      InvocationException,
+                                                                      ParseException,
+                                                                      IOException {
+            InetAddress address = state.getHost();
+            int port = state.getPort();
 
-                    if (address.isSiteLocalAddress()) {
-                        state.getOutputStream().println("local " + port);
-                    } else {
-                        state.getOutputStream().println("remote " + address.getHostAddress() + ":" + port);
-                    }
-                }
-            };
-    public static final Command<ClientState> HELP = new AbstractCommand<ClientState>(
+            if (address.isLoopbackAddress()) {
+                state.getOutputStream().println("local " + port);
+            } else {
+                state.getOutputStream().println("remote " + address.getHostAddress() + ":" + port);
+            }
+        }
+    };
+    public static final Command<DBClientState> HELP = new AbstractCommand<DBClientState>(
             "help", null, "prints out description of state commands", 1, Integer.MAX_VALUE) {
         @Override
-        public void execute(ClientState state, String[] args) {
-            Map<String, Command<ClientState>> commands = state.getCommands();
+        public void execute(DBClientState state, String[] args) {
+            Map<String, Command<DBClientState>> commands = state.getCommands();
 
             state.getOutputStream().println(
                     "You can connect to a database storage server");
@@ -85,14 +88,14 @@ public final class ClientCommands extends SimpleCommandContainer<ClientState> {
         }
 
         @Override
-        public void executeSafely(ClientState state, String[] args) throws DatabaseIOException {
+        public void executeSafely(DBClientState state, String[] args) throws DatabaseIOException {
             // not used
         }
     };
-    public static final Command<ClientState> EXIT = new AbstractCommand<ClientState>(
+    public static final Command<DBClientState> EXIT = new AbstractCommand<DBClientState>(
             "exit", null, "saves all data to file system and stops interpretation", 1) {
         @Override
-        public void execute(ClientState state, String[] args) throws TerminalException {
+        public void execute(DBClientState state, String[] args) throws TerminalException {
             state.prepareToExit(0);
 
             // If all contracts are honoured, this line should not be reached.
@@ -100,7 +103,7 @@ public final class ClientCommands extends SimpleCommandContainer<ClientState> {
         }
 
         @Override
-        public void executeSafely(ClientState state, String[] args)
+        public void executeSafely(DBClientState state, String[] args)
                 throws DatabaseIOException, IllegalArgumentException {
             // Not used.
         }

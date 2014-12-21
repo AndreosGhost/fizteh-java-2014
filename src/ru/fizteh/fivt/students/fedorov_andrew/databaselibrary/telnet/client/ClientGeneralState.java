@@ -16,11 +16,12 @@ public abstract class ClientGeneralState extends JoinedState<ClientGeneralState>
     private static final int DB_STATE_ID = 0;
     private static final int CLIENT_STATE_ID = 1;
 
-    private final ClientState clientState = new ClientState();
+    private final DBClientState clientState = new DBClientState();
     private SingleDatabaseShellState databaseState;
 
     public ClientGeneralState() {
-        super(SingleDBCommands.getInstance().getCommands(), ClientCommands.getInstance().getCommands());
+        setAllCommands(
+                SingleDBCommands.getInstance().getCommands(), ClientCommands.getInstance().getCommands());
     }
 
     public boolean isConnected() {
@@ -66,6 +67,9 @@ public abstract class ClientGeneralState extends JoinedState<ClientGeneralState>
             if (clientState.isConnected()) {
                 onExecuteRequested(DB_STATE_ID, databaseCommand, args);
             }
+        } else if (areNamesEqual(clientCommand, ClientCommands.EXIT) && areNamesEqual(
+                databaseCommand, SingleDBCommands.EXIT)) {
+            prepareToExit(0);
         } else {
             throw new UnsupportedOperationException(
                     "Cannot resolve command conflict: " + clientCommand.getName());
