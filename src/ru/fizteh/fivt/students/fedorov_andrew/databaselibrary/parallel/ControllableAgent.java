@@ -1,4 +1,4 @@
-package ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.test.support.parallel;
+package ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.parallel;
 
 /**
  * Interface that lets the controllable runnable to notify all waiting threads that the pause has come and

@@ -80,11 +80,6 @@ public class AlternativeShellState extends SimpleCommandContainer<AlternativeShe
     }
 
     @Override
-    public void prepareToExit(int exitCode) throws ExitRequest {
-        throw new ExitRequest(exitCode);
-    }
-
-    @Override
     public Map<String, Command<AlternativeShellState>> getCommands() {
         return commandMap;
     }

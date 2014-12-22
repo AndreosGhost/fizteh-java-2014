@@ -12,7 +12,7 @@ import java.util.Map;
  * <li>{@link Double}</li>
  * <li>{@link Boolean}</li>
  * <li>{@link String}</li>
- * <li>{@link JSONParsedObject}</li>
+ * <li>{@link ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.json.JSONParsedObject}</li>
  * </ul>
  */
 public interface JSONParsedObject {
@@ -41,7 +41,7 @@ public interface JSONParsedObject {
      * @param name
      *         name of the field
      * @return null, {@link Integer}, {@link String}, {@link Double}, {@link Boolean} or {@link
-     * ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.json.JSONParsedObject}.
+     * JSONParsedObject}.
      * @throws UnsupportedOperationException
      */
     Object get(String name) throws UnsupportedOperationException;
@@ -51,7 +51,7 @@ public interface JSONParsedObject {
      * @param index
      *         index of the element
      * @return null, {@link Integer}, {@link String}, {@link Double}, {@link Boolean} or {@link
-     * ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.json.JSONParsedObject}.
+     * JSONParsedObject}.
      * @throws UnsupportedOperationException
      */
     Object get(int index) throws UnsupportedOperationException, ClassCastException;
@@ -113,7 +113,7 @@ public interface JSONParsedObject {
      * @param namePieces
      *         consists of Strings and Integers. Each name piece causes associated object retrieval.
      * @return null, {@link Integer}, {@link String}, {@link Double}, {@link Boolean} or {@link
-     * ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.json.JSONParsedObject}.
+     * JSONParsedObject}.
      */
     Object deepGet(Object... namePieces);
 

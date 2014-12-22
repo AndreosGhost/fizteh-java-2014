@@ -7,12 +7,15 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import ru.fizteh.fivt.storage.structured.RemoteTableProvider;
 import ru.fizteh.fivt.storage.structured.RemoteTableProviderFactory;
+import ru.fizteh.fivt.storage.structured.TableProvider;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.AutoCloseableTableProviderFactory;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.DBTableProviderFactory;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.Database;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.remote.RemoteDatabaseStorage;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.TerminalException;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.shell.Shell;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.telnet.client.ClientGeneralState;
-import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.telnet.server.DBServerState;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.telnet.server.TelnetDBServerState;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.test.support.RegexMatcher;
 
 import java.io.IOException;
@@ -24,8 +27,10 @@ import static org.junit.Assert.*;
 
 @RunWith(JUnit4.class)
 public class ClientGeneralStateTest extends InterpreterTestBase<ClientGeneralState> {
-    private DBServerState serverState;
+    private TelnetDBServerState serverState;
     private ClientGeneralState clientState;
+
+    private AutoCloseableTableProviderFactory factory;
 
     @Override
     protected Shell<ClientGeneralState> constructInterpreter() throws TerminalException {
@@ -47,29 +52,33 @@ public class ClientGeneralStateTest extends InterpreterTestBase<ClientGeneralSta
 
     @Before
     public void prepareRemoteAPITest() throws Exception {
-        serverState = new DBServerState(DB_ROOT.toString());
+        factory = new DBTableProviderFactory();
+        TableProvider provider = factory.create(DB_ROOT.toString());
+
+        serverState = new TelnetDBServerState(provider, DB_ROOT.toString());
         new Shell(serverState);
         serverState.startServer(10001);
     }
 
     @After
     public void cleanupRemoteAPITest() throws IOException {
-        serverState.stopServer();
+        serverState.stopServerIfStarted();
+        factory.close();
     }
 
     @Test
     public void testWhereAmI() throws IOException, TerminalException {
-        runBatchExpectZero("connect localhost 10001", "whereami");
-        assertEquals(makeTerminalExpectedMessage("connected", "local 10001"), getOutput());
+        runBatchExpectZero("connect localhost 1099", "whereami");
+        assertEquals(makeTerminalExpectedMessage("connected", "local 1099"), getOutput());
     }
 
     @Test
     public void testCreateTableAndPutSmth() throws IOException, TerminalException {
         runBatchExpectZero(
-                "connect localhost 10001", "create t1 (String)", "use t1", "put a [\"b\"]", "commit");
+                "connect localhost 1099", "create t1 (String)", "use t1", "put a [\"b\"]", "commit");
         assertEquals(
                 makeTerminalExpectedMessage("connected", "created", "using t1", "new", "1"), getOutput());
-        runBatchExpectZero("connect localhost 10001", "use t1", "get a");
+        runBatchExpectZero("connect localhost 1099", "use t1", "get a");
         assertEquals(makeTerminalExpectedMessage("connected", "using t1", "found", "[\"b\"]"), getOutput());
     }
 
@@ -81,7 +90,7 @@ public class ClientGeneralStateTest extends InterpreterTestBase<ClientGeneralSta
 
     @Test
     public void testConnectAndCallNotExistentCommand() throws IOException, TerminalException {
-        runInteractiveExpectZero("connect 127.0.0.1 10001", "not_exists_yeah?", "disconnect");
+        runInteractiveExpectZero("connect 127.0.0.1 1099", "not_exists_yeah?", "disconnect");
         assertThat(
                 getOutput(), new RegexMatcher(
                         makeTerminalExpectedRegex(

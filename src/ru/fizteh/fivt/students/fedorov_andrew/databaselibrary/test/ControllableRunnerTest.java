@@ -3,9 +3,9 @@ package ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.test;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.test.support.parallel.ControllableAgent;
-import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.test.support.parallel.ControllableRunnable;
-import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.test.support.parallel.ControllableRunner;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.parallel.ControllableAgent;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.parallel.ControllableRunnable;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.parallel.ControllableRunner;
 
 import static org.junit.Assert.*;
 

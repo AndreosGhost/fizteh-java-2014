@@ -1,4 +1,4 @@
-package ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.test.support.parallel;
+package ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.parallel;
 
 /**
  * Runnable that consumes some collections of runnables that must be executed sequentially and executes them

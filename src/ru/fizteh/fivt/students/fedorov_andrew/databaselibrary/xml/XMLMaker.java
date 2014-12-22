@@ -33,7 +33,7 @@ public class XMLMaker {
      *         name of each child node (only for iterables/arrays). Can be null or empty.
      * @param identityMap
      *         map to determine cyclic links and handle them in proper way.
-     * @throws XMLStreamException
+     * @throws javax.xml.stream.XMLStreamException
      * @throws IllegalAccessException
      */
     private static void writeXML(XMLStreamWriter writer,

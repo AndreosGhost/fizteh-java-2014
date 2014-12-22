@@ -16,7 +16,7 @@ import static ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.json.JSONHe
  * This class helps to construct a JSON string from any object using special annotations.
  * @author Phoenix
  * @see JSONComplexObject
- * @see ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.json.JSONField
+ * @see JSONField
  */
 public final class JSONMaker {
     private JSONMaker() { }
@@ -169,7 +169,7 @@ public final class JSONMaker {
      * @see Object#toString()
      * @see Number
      * @see JSONComplexObject
-     * @see ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.json.JSONField
+     * @see JSONField
      */
     public static String makeJSON(Object object) throws RuntimeException {
         try {

@@ -62,13 +62,14 @@ public final class ClientCommands extends SimpleCommandContainer<DBClientState> 
                                                                       InvocationException,
                                                                       ParseException,
                                                                       IOException {
-            InetAddress address = state.getHost();
+            String address = state.getHost();
             int port = state.getPort();
 
-            if (address.isLoopbackAddress()) {
+            InetAddress inetAddress = InetAddress.getByName(address);
+            if (inetAddress.isLoopbackAddress()) {
                 state.getOutputStream().println("local " + port);
             } else {
-                state.getOutputStream().println("remote " + address.getHostAddress() + ":" + port);
+                state.getOutputStream().println("remote " + inetAddress.getHostAddress() + ":" + port);
             }
         }
     };

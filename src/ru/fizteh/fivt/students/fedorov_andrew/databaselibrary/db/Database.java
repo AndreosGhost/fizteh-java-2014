@@ -61,7 +61,14 @@ public class Database {
      *         Name of table to drop.
      */
     public void dropTable(String tableName) throws IllegalArgumentException, IOException {
-        String activeTableName = activeTable == null ? null : activeTable.getName();
+        String activeTableName = null;
+        if (activeTable != null) {
+            try {
+                activeTableName = activeTable.getName();
+            } catch (InvalidatedObjectException exc) {
+                // Ignore it.
+            }
+        }
 
         provider.removeTable(tableName);
 

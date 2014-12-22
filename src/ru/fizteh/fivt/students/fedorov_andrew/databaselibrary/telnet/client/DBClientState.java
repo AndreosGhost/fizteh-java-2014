@@ -1,23 +1,27 @@
 package ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.telnet.client;
 
-import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.ExitRequest;
+import ru.fizteh.fivt.storage.structured.RemoteTableProvider;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.remote.RemoteDatabaseStorage;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.shell.BaseShellState;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.shell.Command;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.Log;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.Socket;
 import java.util.Map;
 
 public class DBClientState extends BaseShellState<DBClientState> {
-    private Socket connection;
+    private final RemoteDatabaseStorage storage = new RemoteDatabaseStorage();
+    private RemoteTableProvider remoteProvider;
+    private String host;
+    private int port = -1;
 
     public void connect(String host, int port) throws IOException {
         checkInitialized();
-        if (connection == null) {
+        if (remoteProvider == null) {
             try {
-                connection = new Socket(host, port);
+                remoteProvider = storage.connect(host, port);
+                this.host = host;
+                this.port = port;
             } catch (IOException exc) {
                 throw new IOException("not connected: " + exc.getMessage(), exc.getCause());
             }
@@ -26,22 +30,26 @@ public class DBClientState extends BaseShellState<DBClientState> {
         }
     }
 
-    public InetAddress getHost() {
+    public RemoteTableProvider getRemoteProvider() {
+        return remoteProvider;
+    }
+
+    public String getHost() {
         requireConnected();
-        return connection.getInetAddress();
+        return host;
     }
 
     public int getPort() {
         requireConnected();
-        return connection.getPort();
+        return port;
     }
 
     public void disconnect() throws IllegalStateException, IOException {
         requireConnected();
         try {
-            connection.close();
+            remoteProvider.close();
         } finally {
-            connection = null;
+            remoteProvider = null;
         }
     }
 
@@ -52,7 +60,7 @@ public class DBClientState extends BaseShellState<DBClientState> {
     }
 
     public boolean isConnected() {
-        return connection != null;
+        return remoteProvider != null;
     }
 
     @Override
@@ -64,13 +72,6 @@ public class DBClientState extends BaseShellState<DBClientState> {
         } catch (IOException exc) {
             Log.log(DBClientState.class, exc, "Exception occurred on cleanup");
         }
-    }
-
-    @Override
-    public void prepareToExit(int exitCode) throws ExitRequest {
-        Log.log(DBClientState.class, "Preparing to exit with code:" + exitCode);
-        cleanup();
-        throw new ExitRequest(exitCode);
     }
 
     @Override

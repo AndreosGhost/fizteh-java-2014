@@ -44,23 +44,6 @@ public abstract class InterpreterTestBase<ShellStateImpl extends ShellState<Shel
         DuplicatedIOTestBase.globalCleanupDuplicatedIOTestBase();
     }
 
-    protected abstract Shell<ShellStateImpl> constructInterpreter() throws TerminalException;
-
-    @Before
-    public void prepare() throws TerminalException, DatabaseIOException {
-        interpreter = constructInterpreter();
-    }
-
-    /**
-     * Removes all files under {@link #DB_ROOT}.
-     * @throws java.io.IOException
-     */
-    @After
-    public void cleanup() throws IOException {
-        interpreter = null;
-        IO_DUPLICATOR.cleanup();
-    }
-
     /**
      * Constructs a multiline regular expression that expected output must match.<br/>
      * Recommended to be used to test interpreter mode.
@@ -79,12 +62,43 @@ public abstract class InterpreterTestBase<ShellStateImpl extends ShellState<Shel
      * @return Regex for full interpreter answer.
      * @see java.util.regex.Pattern
      */
-    String makeTerminalExpectedRegex(String greetingRegex, String... reports) {
+    public static String makeTerminalExpectedRegex(String greetingRegex, String... reports) {
         StringBuilder sb = new StringBuilder(String.format("(?m)^%s", greetingRegex));
         for (String s : reports) {
             sb.append(String.format("%s$%n^%s", s, greetingRegex));
         }
         return sb.toString();
+    }
+
+    /**
+     * Constructs a multiline message that expected output must be equal to.<br/>
+     * Recommended to be used to test batch mode.<br/>
+     * Each report is considered to be a separate line. Lines are separated using {@link
+     * System#lineSeparator()}.
+     */
+    public static String makeTerminalExpectedMessage(String... reports) {
+        StringBuilder sb = new StringBuilder();
+        for (String s : reports) {
+            sb.append(String.format("%s%n", s));
+        }
+        return sb.toString();
+    }
+
+    protected abstract Shell<ShellStateImpl> constructInterpreter() throws TerminalException;
+
+    @Before
+    public void prepare() throws TerminalException, DatabaseIOException {
+        interpreter = constructInterpreter();
+    }
+
+    /**
+     * Removes all files under {@link #DB_ROOT}.
+     * @throws java.io.IOException
+     */
+    @After
+    public void cleanup() throws IOException {
+        interpreter = null;
+        IO_DUPLICATOR.cleanup();
     }
 
     /**
@@ -163,19 +177,5 @@ public abstract class InterpreterTestBase<ShellStateImpl extends ShellState<Shel
 
     void runBatchExpectNonZero(String... commands) throws TerminalException {
         assertNotEquals("Non-zero exit status expected", 0, runBatch(commands));
-    }
-
-    /**
-     * Constructs a multiline message that expected output must be equal to.<br/>
-     * Recommended to be used to test batch mode.<br/>
-     * Each report is considered to be a separate line. Lines are separated using {@link
-     * System#lineSeparator()}.
-     */
-    String makeTerminalExpectedMessage(String... reports) {
-        StringBuilder sb = new StringBuilder();
-        for (String s : reports) {
-            sb.append(String.format("%s%n", s));
-        }
-        return sb.toString();
     }
 }

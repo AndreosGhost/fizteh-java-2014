@@ -1,12 +1,11 @@
 package ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.shell;
 
-import ru.fizteh.fivt.storage.structured.RemoteTableProvider;
-import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.Database;
-import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.remote.RemoteDatabaseStorage;
+import ru.fizteh.fivt.storage.structured.TableProvider;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.AutoCloseableTableProviderFactory;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.DBTableProviderFactory;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.TerminalException;
-import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.telnet.ClientServerGeneralState;
-
-import java.rmi.registry.Registry;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.Log;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.telnet.DBShellGeneralState;
 
 class Main {
     //java -Dfizteh.db.dir=/home/phoenix/test/DB ru.fizteh.fivt.students.fedorov_andrew.databaselibrary
@@ -15,19 +14,11 @@ class Main {
     private static final String PATH_PROPERTY = "fizteh.db.dir";
 
     public static void main(String[] args) {
-        try {
-            Shell<ClientServerGeneralState> shell = new Shell<>(
-                    new ClientServerGeneralState(
-                            System.getProperty(
-                                    SingleDatabaseShellState.DB_DIRECTORY_PROPERTY_NAME)) {
-                        @Override
-                        protected Database obtainNewActiveDatabase() throws Exception {
-                            RemoteDatabaseStorage storage = new RemoteDatabaseStorage();
-                            RemoteTableProvider provider =
-                                    storage.connect("localhost", Registry.REGISTRY_PORT);
-                            return new Database(provider, "", getOutputStream());
-                        }
-                    });
+        try (AutoCloseableTableProviderFactory factory = new DBTableProviderFactory()) {
+            String databaseRoot = System.getProperty(SingleDatabaseShellState.DB_DIRECTORY_PROPERTY_NAME);
+            TableProvider provider = factory.create(databaseRoot);
+
+            Shell<DBShellGeneralState> shell = new Shell<>(new DBShellGeneralState(provider, databaseRoot));
             int exitCode;
             if (args.length == 0) {
                 exitCode = shell.run(System.in);
@@ -40,7 +31,7 @@ class Main {
             // Already handled.
             System.exit(1);
         } catch (Exception exc) {
-            //            exc.printStackTrace();
+            Log.log(Main.class, exc);
             System.out.println(exc.getMessage());
             System.exit(1);
         }

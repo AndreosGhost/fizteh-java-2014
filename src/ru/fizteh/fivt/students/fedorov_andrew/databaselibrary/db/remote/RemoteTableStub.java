@@ -20,6 +20,9 @@ import java.util.List;
  * I created this stub because task API is not friendly and there are no RemoteExceptions.
  */
 final class RemoteTableStub implements Table, Serializable, Closeable {
+    // Frankly speaking there is no need to perform forceClose() method. It it done to decrease count of
+    // remote requests.
+
     /**
      * Table name is cached for correct close handling at client's local.
      */
@@ -27,7 +30,7 @@ final class RemoteTableStub implements Table, Serializable, Closeable {
 
     private final IRemoteTable remoteTable;
     /**
-     * For synchronization on client side.
+     * For validity control on client side.
      */
     private final ValidityController validityController = new ValidityController();
     /**
@@ -38,10 +41,6 @@ final class RemoteTableStub implements Table, Serializable, Closeable {
     public RemoteTableStub(RemoteTableImpl remoteTable, String tableName) {
         this.remoteTable = remoteTable;
         this.tableName = tableName;
-    }
-
-    public IRemoteTable getRemoteTable() {
-        return remoteTable;
     }
 
     /**

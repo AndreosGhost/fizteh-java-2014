@@ -80,7 +80,9 @@ public abstract class JoinedState<S extends ShellState<S>> extends BaseShellStat
     }
 
     /**
-     * Calls {@link ShellState#cleanup()} on each registered state if it is not null.<br/>
+     * Calls {@link ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.shell.ShellState#cleanup()} on
+     * each
+     * registered state if it is not null.<br/>
      * States are obtained by {@link #obtainState(int)}.
      */
     @Override
@@ -120,17 +122,24 @@ public abstract class JoinedState<S extends ShellState<S>> extends BaseShellStat
     }
 
     /**
-     * Returns mapping between command names and command wrappers that on {@link Command#execute(ShellState,
-     * String[])} calls one of two methods: {@link #onExecuteConflict(List, List,
-     * String[])} or {@link #onExecuteRequested(int, Command, String[])}.<br/>
+     * Returns mapping between command names and command wrappers that on {@link
+     * ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.shell.Command#execute(ru.fizteh.fivt.students
+     * .fedorov_andrew.databaselibrary.shell.ShellState,
+     * String[])} calls one of two methods: {@link #onExecuteConflict(java.util.List, java.util.List,
+     * String[])} or {@link #onExecuteRequested(int, ru.fizteh.fivt.students.fedorov_andrew.databaselibrary
+     * .shell.Command,
+     * String[])}.<br/>
      * Exceptions thrown by these methods are handled with local exception handler.<br/>
      * As soon as all possible state commands wrapped by one multicommand have the same name, {@link
-     * Command#getName()} returns that name, but both {@link Command#getInfo()} and {@link
-     * Command#getInvocation()} throw {@link UnsupportedOperationException}.
+     * ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.shell.Command#getName()} returns that name, but
+     * both {@link ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.shell.Command#getInfo()} and {@link
+     * ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.shell.Command#getInvocation()} throw {@link
+     * UnsupportedOperationException}.
      * @see #setExceptionHandler(AccurateExceptionHandler)
      * @see #getExceptionHandler()
-     * @see #onExecuteRequested(int, Command, String[])
-     * @see #onExecuteConflict(List, List, String[])
+     * @see #onExecuteRequested(int, ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.shell.Command,
+     * String[])
+     * @see #onExecuteConflict(java.util.List, java.util.List, String[])
      */
     @Override
     public Map<String, Command<S>> getCommands() {
@@ -148,8 +157,10 @@ public abstract class JoinedState<S extends ShellState<S>> extends BaseShellStat
     /**
      * This method is called when there are several commands with the same name from different states. You
      * decide how to resolve this conflict. <br/>
-     * The default implementation throws {@link java.lang.UnsupportedOperationException}.<br/>
-     * In this method you can also call {@link #onExecuteRequested(int, Command, String[])} after you have
+     * The default implementation throws {@link UnsupportedOperationException}.<br/>
+     * In this method you can also call {@link #onExecuteRequested(int, ru.fizteh.fivt.students
+     * .fedorov_andrew.databaselibrary.shell.Command,
+     * String[])} after you have
      * chosen for which state to call the command.
      * @throws Exception
      */
@@ -161,7 +172,7 @@ public abstract class JoinedState<S extends ShellState<S>> extends BaseShellStat
     /**
      * Runs normal execution of the given state command. The default implementation is {@code
      * command.execute(obtainState(stateID), args)}.
-     * @throws java.lang.Exception
+     * @throws Exception
      */
     protected void executeNormally(int stateID, Command command, String[] args) throws Exception {
         command.execute(obtainState(stateID), args);
@@ -187,7 +198,7 @@ public abstract class JoinedState<S extends ShellState<S>> extends BaseShellStat
     }
 
     /**
-     * Command for {@link ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.shell.JoinedState} that
+     * Command for {@link JoinedState} that
      * wraps
      * at least one command from a state.
      */

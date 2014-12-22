@@ -133,7 +133,7 @@ public class Server implements Closeable {
             try {
                 close();
             } catch (IOException exc) {
-                Log.log(DBServerState.class, exc, this + ": failed to close server socket");
+                Log.log(TelnetDBServerState.class, exc, this + ": failed to close server socket");
             }
         }
     }

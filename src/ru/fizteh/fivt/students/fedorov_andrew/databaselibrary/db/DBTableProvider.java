@@ -102,81 +102,6 @@ final class DBTableProvider implements AutoCloseableProvider {
     }
 
     @Override
-    public AutoCloseableTable getTable(String name) throws IllegalArgumentException {
-        try (UseLock useLock = validityController.use()) {
-            Utility.checkTableNameIsCorrect(name);
-
-            Lock lock = persistenceLock.readLock();
-            lock.lock();
-            try {
-                if (!tables.containsKey(name)) {
-                    // Read table from FS. Must get a better lock.
-                    lock.unlock();
-                    lock = persistenceLock.writeLock();
-                    lock.lock();
-                    if (!tables.containsKey(name)) {
-                        try {
-                            loadMissingTables();
-                        } catch (DatabaseIOException exc) {
-                            throw new IllegalArgumentException(exc.getMessage(), exc);
-                        }
-                    }
-                }
-
-                if (tables.containsKey(name)) {
-                    AutoCloseableTable table = tables.get(name);
-                    if (table == null) {
-                        // Table is corrupt.
-                        DatabaseIOException corruptionReason = corruptTables.get(name);
-                        throw new IllegalArgumentException(
-                                corruptionReason.getMessage(), corruptionReason);
-                    }
-
-                    // Table is normal.
-                    return table;
-                } else {
-                    // Table not exists.
-                    return null;
-                }
-            } finally {
-                lock.unlock();
-            }
-        }
-    }
-
-    @Override
-    public AutoCloseableTable createTable(String name, List<Class<?>> columnTypes)
-            throws IllegalArgumentException, DatabaseIOException {
-        try (UseLock useLock = validityController.use()) {
-            Utility.checkTableNameIsCorrect(name);
-
-            if (columnTypes == null) {
-                throw new IllegalArgumentException("Column types list must not be null");
-            }
-            if (columnTypes.isEmpty()) {
-                throw new IllegalArgumentException("Column types list must not be empty");
-            }
-            Utility.checkAllTypesAreSupported(columnTypes, SUPPORTED_TYPES);
-
-            Path tablePath = databaseRoot.resolve(name);
-
-            persistenceLock.writeLock().lock();
-            try {
-                if (tables.containsKey(name) && tables.get(name) != null) {
-                    return null;
-                }
-
-                AutoCloseableTable newTable =
-                        StoreableTableImpl.createTable(this, this::onTableClosed, tablePath, columnTypes);
-                tables.put(name, newTable);
-                return newTable;
-            } finally {
-                persistenceLock.writeLock().unlock();
-            }
-        }
-    }
-
-    @Override
     public void removeTable(String name)
             throws IllegalArgumentException, IllegalStateException, DatabaseIOException {
         try (UseLock useLock = validityController.use()) {
@@ -455,6 +380,81 @@ final class DBTableProvider implements AutoCloseableProvider {
             factory.onProviderClosed(this);
         } finally {
             tableClosedByMe = false;
+        }
+    }
+
+    @Override
+    public AutoCloseableTable getTable(String name) throws IllegalArgumentException {
+        try (UseLock useLock = validityController.use()) {
+            Utility.checkTableNameIsCorrect(name);
+
+            Lock lock = persistenceLock.readLock();
+            lock.lock();
+            try {
+                if (!tables.containsKey(name)) {
+                    // Read table from FS. Must get a better lock.
+                    lock.unlock();
+                    lock = persistenceLock.writeLock();
+                    lock.lock();
+                    if (!tables.containsKey(name)) {
+                        try {
+                            loadMissingTables();
+                        } catch (DatabaseIOException exc) {
+                            throw new IllegalArgumentException(exc.getMessage(), exc);
+                        }
+                    }
+                }
+
+                if (tables.containsKey(name)) {
+                    AutoCloseableTable table = tables.get(name);
+                    if (table == null) {
+                        // Table is corrupt.
+                        DatabaseIOException corruptionReason = corruptTables.get(name);
+                        throw new IllegalArgumentException(
+                                corruptionReason.getMessage(), corruptionReason);
+                    }
+
+                    // Table is normal.
+                    return table;
+                } else {
+                    // Table not exists.
+                    return null;
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
+    }
+
+    @Override
+    public AutoCloseableTable createTable(String name, List<Class<?>> columnTypes)
+            throws IllegalArgumentException, DatabaseIOException {
+        try (UseLock useLock = validityController.use()) {
+            Utility.checkTableNameIsCorrect(name);
+
+            if (columnTypes == null) {
+                throw new IllegalArgumentException("Column types list must not be null");
+            }
+            if (columnTypes.isEmpty()) {
+                throw new IllegalArgumentException("Column types list must not be empty");
+            }
+            Utility.checkAllTypesAreSupported(columnTypes, SUPPORTED_TYPES);
+
+            Path tablePath = databaseRoot.resolve(name);
+
+            persistenceLock.writeLock().lock();
+            try {
+                if (tables.containsKey(name) && tables.get(name) != null) {
+                    return null;
+                }
+
+                AutoCloseableTable newTable =
+                        StoreableTableImpl.createTable(this, this::onTableClosed, tablePath, columnTypes);
+                tables.put(name, newTable);
+                return newTable;
+            } finally {
+                persistenceLock.writeLock().unlock();
+            }
         }
     }
 }

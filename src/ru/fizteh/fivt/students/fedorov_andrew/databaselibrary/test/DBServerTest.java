@@ -7,10 +7,16 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import ru.fizteh.fivt.storage.structured.TableProvider;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.AutoCloseableTableProviderFactory;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.DBTableProviderFactory;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.shell.Shell;
-import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.telnet.server.DBServerState;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.telnet.server.TelnetDBServerState;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 
 import static org.junit.Assert.*;
 
@@ -18,17 +24,33 @@ import static org.junit.Assert.*;
 public class DBServerTest extends TestBase {
     @Rule
     public ExpectedException exception = ExpectedException.none();
-    private DBServerState serverState;
+    private TelnetDBServerState serverState;
+
+    private AutoCloseableTableProviderFactory factory;
 
     @Before
     public void prepareRemoteAPITest() throws Exception {
-        serverState = new DBServerState(DB_ROOT.toString());
+        factory = new DBTableProviderFactory();
+        TableProvider provider = factory.create(DB_ROOT.toString());
+
+        serverState = new TelnetDBServerState(provider, DB_ROOT.toString());
         new Shell(serverState);
     }
 
     @After
     public void cleanupRemoteAPITest() throws IOException {
         serverState.stopServerIfStarted();
+        factory.close();
+    }
+
+    private String collectFromInputStream(InputStream inputStream) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+            while (reader.ready()) {
+                sb.append(reader.readLine()).append(System.lineSeparator());
+            }
+        }
+        return sb.toString();
     }
 
     @Test

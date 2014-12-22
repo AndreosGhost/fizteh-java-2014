@@ -10,6 +10,9 @@ import org.junit.runners.JUnit4;
 import ru.fizteh.fivt.storage.structured.RemoteTableProvider;
 import ru.fizteh.fivt.storage.structured.Storeable;
 import ru.fizteh.fivt.storage.structured.Table;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.AutoCloseableProvider;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.AutoCloseableTableProviderFactory;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.DBTableProviderFactory;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.remote.RemoteDatabaseStorage;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.remote.RemoteTableProviderFactoryImpl;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.InvalidatedObjectException;
@@ -24,16 +27,23 @@ import static org.junit.Assert.*;
 public class RemoteDataStorageTest extends TestBase {
     @Rule
     public ExpectedException exception = ExpectedException.none();
-    private RemoteTableProviderFactoryImpl factory;
+    private RemoteTableProviderFactoryImpl remoteFactory;
+
+    private AutoCloseableTableProviderFactory factory;
+    private AutoCloseableProvider localProvider;
 
     @Before
     public void prepare() throws Exception {
-        factory = new RemoteTableProviderFactoryImpl();
-        factory.establishStorage(DB_ROOT.toString());
+        factory = new DBTableProviderFactory();
+        localProvider = factory.create(DB_ROOT.toString());
+
+        remoteFactory = new RemoteTableProviderFactoryImpl(localProvider);
+        remoteFactory.establishStorage(DB_ROOT.toString());
     }
 
     @After
     public void cleanup() throws Exception {
+        remoteFactory.close();
         factory.close();
         cleanDBRoot();
     }
@@ -88,7 +98,7 @@ public class RemoteDataStorageTest extends TestBase {
 
         Table remoteTable = provider.createTable(tableName, Arrays.asList(String.class));
 
-        Table serverTable = factory.getProvider().getTable(tableName);
+        Table serverTable = localProvider.getTable(tableName);
         ((AutoCloseable) serverTable).close();
 
         exception.expect(InvalidatedObjectException.class);
@@ -104,7 +114,7 @@ public class RemoteDataStorageTest extends TestBase {
 
         Table remoteTable = provider.createTable(tableName, Arrays.asList(String.class));
 
-        factory.close();
+        remoteFactory.close();
 
         exception.expect(InvalidatedObjectException.class);
         remoteTable.getName();
@@ -119,7 +129,7 @@ public class RemoteDataStorageTest extends TestBase {
 
         Table remoteTable = remoteProvider.createTable(tableName, Arrays.asList(String.class));
 
-        Table serverTable = factory.getProvider().getTable(tableName);
+        Table serverTable = localProvider.getTable(tableName);
         ((AutoCloseable) serverTable).close();
 
         try {

@@ -1,8 +1,8 @@
 package ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.remote;
 
 import ru.fizteh.fivt.storage.structured.TableProvider;
-import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.AutoCloseableTableProviderFactory;
-import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.DBTableProviderFactory;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.AutoCloseableProvider;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.ProviderWrap;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.Log;
 
 import java.io.IOException;
@@ -19,26 +19,22 @@ public class RemoteTableProviderFactoryImpl extends UnicastRemoteObject
         implements IRemoteTableProviderFactory {
 
     static final String FACTORY_NAME = "/Database";
-
-    private Registry registry;
-
-    private AutoCloseableTableProviderFactory factory;
-
     /**
-     * Server-local table provider.
+     * Local provider that is final for all time.
      */
-    private TableProvider provider;
-
+    private final TableProvider localProvider;
+    private Registry registry;
     /**
-     * Server-local singleton implementation of remote table provider that is wrapped in stub.
+     * Provider wrap that can be closed.
+     */
+    private AutoCloseableProvider providerWrap;
+    /**
+     * Server-local singleton implementation of remote table providerWrap that is wrapped in stub.
      */
     private IRemoteTableProvider remoteProvider;
 
-    public RemoteTableProviderFactoryImpl() throws RemoteException {
-    }
-
-    public synchronized TableProvider getProvider() {
-        return provider;
+    public RemoteTableProviderFactoryImpl(TableProvider provider) throws RemoteException {
+        this.localProvider = provider;
     }
 
     private boolean isBound() {
@@ -57,13 +53,12 @@ public class RemoteTableProviderFactoryImpl extends UnicastRemoteObject
             return;
         }
         try {
+            providerWrap.close();
             registry.unbind(FACTORY_NAME);
-            factory.close();
         } catch (NotBoundException exc) {
             throw new IllegalStateException("The factory has not been established");
         } finally {
-            factory = null;
-            provider = null;
+            providerWrap = null;
             remoteProvider = null;
             registry = null;
         }
@@ -76,16 +71,12 @@ public class RemoteTableProviderFactoryImpl extends UnicastRemoteObject
     }
 
     @Override
-    public synchronized TableProvider establishStorage(String localDatabaseRoot, int port)
-            throws IOException {
+    public synchronized void establishStorage(String localDatabaseRoot, int port) throws IOException {
         if (isBound()) {
             throw new IllegalStateException("Factory already established");
         }
 
         try {
-            factory = new DBTableProviderFactory();
-            provider = factory.create(localDatabaseRoot);
-
             try {
                 registry = LocateRegistry.getRegistry(port);
                 registry.rebind(FACTORY_NAME, this);
@@ -95,17 +86,13 @@ public class RemoteTableProviderFactoryImpl extends UnicastRemoteObject
                 registry.rebind(FACTORY_NAME, this);
             }
 
-            remoteProvider = new RemoteTableProviderImpl(provider);
-
-            return provider;
+            providerWrap = new ProviderWrap(localProvider);
+            remoteProvider = new RemoteTableProviderImpl(providerWrap);
         } catch (Exception exc) {
             Log.log(RemoteTableProviderFactoryImpl.class, exc, "Got exception on establishment");
             try {
-                if (factory != null) {
-                    factory.close();
-                }
-                factory = null;
-                provider = null;
+                providerWrap.close();
+                providerWrap = null;
                 registry = null;
                 remoteProvider = null;
             } catch (Exception ignored) {
@@ -117,4 +104,5 @@ public class RemoteTableProviderFactoryImpl extends UnicastRemoteObject
             throw exc;
         }
     }
+
 }

@@ -12,7 +12,7 @@ import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.shell.SingleDataba
 
 import java.util.List;
 
-public abstract class ClientGeneralState extends JoinedState<ClientGeneralState> {
+public class ClientGeneralState extends JoinedState<ClientGeneralState> {
     private static final int DB_STATE_ID = 0;
     private static final int CLIENT_STATE_ID = 1;
 
@@ -28,14 +28,16 @@ public abstract class ClientGeneralState extends JoinedState<ClientGeneralState>
         return clientState.isConnected();
     }
 
-    protected abstract Database obtainNewActiveDatabase() throws Exception;
+    protected Database obtainNewActiveDatabase() throws Exception {
+        return new Database(clientState.getRemoteProvider(), clientState.getHost(), getOutputStream());
+    }
 
     @Override
     public void init(Shell host) throws Exception {
         super.init(host);
         clientState.init(host);
         setExceptionHandler(
-                (exception, noData) -> AbstractCommand.DATABASE_ERROR_HANDLER
+                (exception, noData) -> AbstractCommand.DEFAULT_EXCEPTION_HANDLER
                         .handleException(exception, getOutputStream()));
     }
 

@@ -101,7 +101,7 @@ interface IRemoteTableProvider extends Remote {
      *         Список значений, которыми нужно проинициализировать поля Storeable.
      * @return {@link ru.fizteh.fivt.storage.structured.Storeable}, проинициализированный переданными
      * значениями.
-     * @throws ColumnFormatException
+     * @throws ru.fizteh.fivt.storage.structured.ColumnFormatException
      *         При несоответствии типа переданного значения и колонки.
      * @throws IndexOutOfBoundsException
      *         При несоответствии числа переданных значений и числа колонок.

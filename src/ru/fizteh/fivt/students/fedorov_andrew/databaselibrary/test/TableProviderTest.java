@@ -19,10 +19,10 @@ import ru.fizteh.fivt.storage.structured.TableProviderFactory;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.DBTableProviderFactory;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.StringTableImpl;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.InvalidatedObjectException;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.parallel.ControllableAgent;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.parallel.ControllableRunnable;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.parallel.ControllableRunner;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.test.support.TestUtils;
-import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.test.support.parallel.ControllableAgent;
-import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.test.support.parallel.ControllableRunnable;
-import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.test.support.parallel.ControllableRunner;
 
 import java.io.IOException;
 import java.io.PrintWriter;

@@ -1,4 +1,4 @@
-package ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.test.support.parallel;
+package ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.parallel;
 
 /**
  * Interface for runnable that can throw any exceptions.

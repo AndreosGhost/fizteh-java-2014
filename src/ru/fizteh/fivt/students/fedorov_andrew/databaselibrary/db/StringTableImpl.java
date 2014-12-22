@@ -361,7 +361,7 @@ public final class StringTableImpl {
     }
 
     /**
-     * Gets {@link ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.TablePart} instance assigned to
+     * Gets {@link TablePart} instance assigned to
      * this {@code hash} from memory. Not thread-safe.
      * @param key
      *         key that is hold by desired table.

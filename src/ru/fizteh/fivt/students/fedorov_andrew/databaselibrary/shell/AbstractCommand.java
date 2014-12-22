@@ -7,7 +7,6 @@ import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.Terminal
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.UnexpectedRemoteException;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.WrongArgsNumberException;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.AccurateExceptionHandler;
-import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.Log;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -21,50 +20,44 @@ import static ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.Uti
  * @author phoenix
  */
 public abstract class AbstractCommand<State extends ShellState<State>> implements Command<State> {
-    private static final Class<?>[] EXECUTE_SAFELY_THROWN_EXCEPTIONS;
-
-    static {
-        Class<?>[] exceptions = null;
-
-        try {
-            exceptions = AbstractCommand.class.getDeclaredMethod(
-                    "executeSafely", ShellState.class, String[].class).getExceptionTypes();
-        } catch (Exception exc) {
-            Log.log(AbstractCommand.class, exc, "Failed to obtain exceptions thrown by executeSafely");
-            throw new RuntimeException(
-                    "Failed to obtain exceptions thrown by executeSafely: " + exc.getMessage(),
-                    exc.getCause());
-        } finally {
-            EXECUTE_SAFELY_THROWN_EXCEPTIONS = exceptions;
-        }
-    }
 
     /**
-     * Used for unsafe calls. Catches and handles all exceptions thrown by {@link
-     * AbstractCommand#executeSafely
-     * (SingleDatabaseShellState, String[]) } and {@link IllegalArgumentException }.
+     * Used for unsafe calls. Redirects handling of all exceptions to Shell.
      */
-    public static final AccurateExceptionHandler<PrintStream> DATABASE_ERROR_HANDLER =
-            (Exception exc, PrintStream ps) -> {
-                boolean found = false;
-                Class<?> actualType = exc.getClass();
+    public static final AccurateExceptionHandler<PrintStream> DEFAULT_EXCEPTION_HANDLER =
+            new AccurateExceptionHandler<PrintStream>() {
+                final Class<?>[] handledExceptions = new Class<?>[] {IllegalArgumentException.class,
+                                                                     NoActiveTableException.class,
+                                                                     IllegalStateException.class,
+                                                                     NullPointerException.class,
+                                                                     InvocationException.class,
+                                                                     ParseException.class,
+                                                                     IOException.class,
+                                                                     UnexpectedRemoteException.class,
+                                                                     ExecutionNotPermittedException.class};
 
-                for (Class<?> expectedType : EXECUTE_SAFELY_THROWN_EXCEPTIONS) {
-                    try {
-                        actualType.asSubclass(expectedType);
-                        found = true;
-                        break;
-                    } catch (ClassCastException cce) {
-                        // Ignore it.
+                @Override
+                public void handleException(Exception exc, PrintStream ps) throws TerminalException {
+                    Class<?> actualType = exc.getClass();
+                    boolean found = false;
+
+                    for (Class<?> expectedType : handledExceptions) {
+                        try {
+                            actualType.asSubclass(expectedType);
+                            found = true;
+                            break;
+                        } catch (ClassCastException cce) {
+                            // Ignore it.
+                        }
                     }
-                }
 
-                if (found) {
-                    Shell.handleError(exc.getMessage(), exc, true, ps);
-                } else if (exc instanceof RuntimeException) {
-                    throw (RuntimeException) exc;
-                } else {
-                    throw new RuntimeException("Unexpected exception", exc);
+                    if (found) {
+                        Shell.handleError(exc.getMessage(), exc, true, ps);
+                    } else if (exc instanceof RuntimeException) {
+                        throw (RuntimeException) exc;
+                    } else {
+                        throw new RuntimeException("Unexpected exception: " + exc.toString(), exc);
+                    }
                 }
             };
 
@@ -120,7 +113,7 @@ public abstract class AbstractCommand<State extends ShellState<State>> implement
                 () -> {
                     checkArgsNumber(args, minimalArgsCount, maximalArgsCount);
                     executeSafely(state, args);
-                }, DATABASE_ERROR_HANDLER, state.getOutputStream());
+                }, DEFAULT_EXCEPTION_HANDLER, state.getOutputStream());
     }
 
     @Override
@@ -138,16 +131,7 @@ public abstract class AbstractCommand<State extends ShellState<State>> implement
         return invocationArgs;
     }
 
-    protected abstract void executeSafely(State state, String[] args) throws
-                                                                      IllegalArgumentException,
-                                                                      NoActiveTableException,
-                                                                      IllegalStateException,
-                                                                      NullPointerException,
-                                                                      InvocationException,
-                                                                      ParseException,
-                                                                      IOException,
-                                                                      ExecutionNotPermittedException,
-                                                                      UnexpectedRemoteException;
+    protected abstract void executeSafely(State state, String[] args) throws Exception;
 
     void checkArgsNumber(String[] args, int minimal, int maximal) throws WrongArgsNumberException {
         if (args.length < minimal || args.length > maximal) {

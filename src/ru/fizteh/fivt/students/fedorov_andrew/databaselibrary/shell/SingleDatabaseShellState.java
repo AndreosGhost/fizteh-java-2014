@@ -3,9 +3,7 @@ package ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.shell;
 import ru.fizteh.fivt.storage.structured.Table;
 import ru.fizteh.fivt.storage.structured.TableProvider;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.db.Database;
-import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.ExitRequest;
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.NoActiveTableException;
-import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.Log;
 
 import java.io.PrintStream;
 import java.util.Map;
@@ -60,15 +58,10 @@ public abstract class SingleDatabaseShellState extends BaseShellState<SingleData
 
     @Override
     public void cleanup() {
-        getActiveDatabase().rollback();
-    }
-
-    @Override
-    public void prepareToExit(int exitCode) throws ExitRequest {
-        Log.log(SingleDatabaseShellState.class, "Preparing to exit with code " + exitCode);
-        cleanup();
-        Log.close();
-        throw new ExitRequest(exitCode);
+        Database activeDatabase = getActiveDatabase();
+        if (activeDatabase != null) {
+            activeDatabase.rollback();
+        }
     }
 
     /**

@@ -48,7 +48,7 @@ public class ServerCommunicator implements Runnable, Closeable {
                 close();
             } catch (IOException exc) {
                 Log.log(
-                        DBServerState.class,
+                        TelnetDBServerState.class,
                         this + " failed to close connection after all commands execution");
             }
 

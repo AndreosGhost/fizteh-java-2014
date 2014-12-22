@@ -213,7 +213,7 @@ public final class Utility {
      * @param escapeSequence
      *         Escape sequence. Quotes and this sequence occurrences will be prepended by escape sequence.
      * @return Endcoded string inside quotes. Returns null for null string.
-     * @see ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.Utility#unquoteString(String,
+     * @see Utility#unquoteString(String,
      * String, String)
      */
     public static String quoteString(String s, String quoteSequence, String escapeSequence) {

@@ -1,6 +1,7 @@
 package ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.shell;
 
 import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.ExitRequest;
+import ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.support.Log;
 
 import java.io.PrintStream;
 
@@ -33,10 +34,15 @@ public interface ShellState<S extends ShellState<S>> extends CommandContainer<S>
     void init(Shell<S> host) throws Exception;
 
     /**
-     * Safely exit with cleanup.
+     * Safely exit with cleanup. Default implementation calls {@link #cleanup()} and throws {@link
+     * ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.ExitRequest} with the given code.
      * @throws ru.fizteh.fivt.students.fedorov_andrew.databaselibrary.exception.ExitRequest
      *         you must throw this exception to indicate that you really want to exit. Do no call
      *         {@link System#exit(int)} instead of it.
      */
-    void prepareToExit(int exitCode) throws ExitRequest;
+    default void prepareToExit(int exitCode) throws ExitRequest {
+        Log.log(getClass(), "Preparing to exit with code " + exitCode);
+        cleanup();
+        throw new ExitRequest(exitCode);
+    }
 }
