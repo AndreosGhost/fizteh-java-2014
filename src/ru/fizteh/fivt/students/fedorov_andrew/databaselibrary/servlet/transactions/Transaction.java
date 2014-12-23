@@ -50,7 +50,7 @@ public class Transaction<T> {
      * transaction looking at this timestamp.
      */
     private long lastAccessTime;
-    private T extraData;
+    private volatile T extraData;
 
     public Transaction(int transactionID) {
         this.transactionID = transactionID;
@@ -61,21 +61,11 @@ public class Transaction<T> {
     }
 
     public T getExtraData() {
-        useLock.lock();
-        try {
-            return extraData;
-        } finally {
-            useLock.unlock();
-        }
+        return extraData;
     }
 
     public void setExtraData(T extraData) {
-        useLock.lock();
-        try {
-            this.extraData = extraData;
-        } finally {
-            useLock.unlock();
-        }
+        this.extraData = extraData;
     }
 
     /**

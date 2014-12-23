@@ -122,8 +122,12 @@ public class HttpDBServer {
             int transactionID = Integer.parseInt(request.getParameter(PARAM_TRANSACTION_ID));
             Transaction<Table> transaction = transactionPool.obtainTransaction(transactionID);
             try {
-                int size = transaction.getExtraData().size();
-                response.getWriter().print(size + "");
+                transaction.executeAction(
+                        () -> {
+                            int size = transaction.getExtraData().size();
+                            response.getWriter().print(size + "");
+                            return null;
+                        });
             } finally {
                 transactionPool.releaseTransaction(transaction);
             }
@@ -136,24 +140,30 @@ public class HttpDBServer {
             int transactionID = Integer.parseInt(request.getParameter(PARAM_TRANSACTION_ID));
             Transaction<Table> transaction = transactionPool.obtainTransaction(transactionID);
             try {
-                String key = request.getParameter(PARAM_KEY);
-                String serializedNewValue = request.getParameter(PARAM_VALUE);
+                transaction.executeAction(
+                        () -> {
+                            String key = request.getParameter(PARAM_KEY);
+                            String serializedNewValue = request.getParameter(PARAM_VALUE);
 
-                // Deserializing new value.
-                Storeable storeableNewValue =
-                        localProvider.deserialize(transaction.getExtraData(), serializedNewValue);
+                            // Deserializing new value.
+                            Storeable storeableNewValue =
+                                    localProvider.deserialize(transaction.getExtraData(), serializedNewValue);
 
-                // Putting new value instead of old.
-                Storeable storeableOldValue = transaction.getExtraData().put(key, storeableNewValue);
+                            // Putting new value instead of old.
+                            Storeable storeableOldValue =
+                                    transaction.getExtraData().put(key, storeableNewValue);
 
-                // This key did not exist before.
-                if (storeableOldValue == null) {
-                    throw new BadRequestException("Key not found: " + key);
-                }
-                // Now we must serialize old value.
-                String serializedOldValue =
-                        localProvider.serialize(transaction.getExtraData(), storeableOldValue);
-                response.getWriter().print(serializedOldValue);
+                            // This key did not exist before.
+                            if (storeableOldValue == null) {
+                                throw new BadRequestException("Key not found: " + key);
+                            }
+                            // Now we must serialize old value.
+                            String serializedOldValue =
+                                    localProvider.serialize(transaction.getExtraData(), storeableOldValue);
+                            response.getWriter().print(serializedOldValue);
+                            return null;
+                        });
+
             } finally {
                 transactionPool.releaseTransaction(transaction);
             }
@@ -166,15 +176,20 @@ public class HttpDBServer {
             int transactionID = Integer.parseInt(request.getParameter(PARAM_TRANSACTION_ID));
             Transaction<Table> transaction = transactionPool.obtainTransaction(transactionID);
             try {
-                String key = request.getParameter(PARAM_KEY);
-                Storeable storeableValue = transaction.getExtraData().get(key);
-                // Not found
-                if (storeableValue == null) {
-                    throw new BadRequestException("Key not found: " + key);
-                }
-                // Now we must serialize it.
-                String serializedValue = localProvider.serialize(transaction.getExtraData(), storeableValue);
-                response.getWriter().print(serializedValue);
+                transaction.executeAction(
+                        () -> {
+                            String key = request.getParameter(PARAM_KEY);
+                            Storeable storeableValue = transaction.getExtraData().get(key);
+                            // Not found
+                            if (storeableValue == null) {
+                                throw new BadRequestException("Key not found: " + key);
+                            }
+                            // Now we must serialize it.
+                            String serializedValue =
+                                    localProvider.serialize(transaction.getExtraData(), storeableValue);
+                            response.getWriter().print(serializedValue);
+                            return null;
+                        });
             } finally {
                 transactionPool.releaseTransaction(transaction);
             }
@@ -187,8 +202,12 @@ public class HttpDBServer {
             int transactionID = Integer.parseInt(request.getParameter(PARAM_TRANSACTION_ID));
             Transaction<Table> transaction = transactionPool.obtainTransaction(transactionID);
             try {
-                int diff = transaction.getExtraData().commit();
-                response.getWriter().print(String.format("%s=%d", FIELD_DIFF, diff));
+                transaction.executeAction(
+                        () -> {
+                            int diff = transaction.getExtraData().commit();
+                            response.getWriter().print(String.format("%s=%d", FIELD_DIFF, diff));
+                            return null;
+                        });
             } finally {
                 transactionPool.killTransaction(transaction);
             }
@@ -201,8 +220,12 @@ public class HttpDBServer {
             int transactionID = Integer.parseInt(request.getParameter(PARAM_TRANSACTION_ID));
             Transaction<Table> transaction = transactionPool.obtainTransaction(transactionID);
             try {
-                int diff = transaction.getExtraData().rollback();
-                response.getWriter().print(String.format("%s=%d", FIELD_DIFF, diff));
+                transaction.executeAction(
+                        () -> {
+                            int diff = transaction.getExtraData().rollback();
+                            response.getWriter().print(String.format("%s=%d", FIELD_DIFF, diff));
+                            return null;
+                        });
             } finally {
                 transactionPool.killTransaction(transaction);
             }
@@ -223,8 +246,13 @@ public class HttpDBServer {
             Transaction<Table> transaction = transactionPool.newTransaction();
             try {
                 transaction.setExtraData(table);
-                int transactionID = transaction.getTransactionID();
-                response.getWriter().print(String.format("%s=%05d", PARAM_TRANSACTION_ID, transactionID));
+                transaction.executeAction(
+                        () -> {
+                            int transactionID = transaction.getTransactionID();
+                            response.getWriter()
+                                    .print(String.format("%s=%05d", PARAM_TRANSACTION_ID, transactionID));
+                            return null;
+                        });
             } finally {
                 transactionPool.releaseTransaction(transaction);
             }
